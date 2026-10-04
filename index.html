@@ -1,995 +1,1186 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Head Post Office Operations Tracker</title>
-  
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Village Mapping • Delivery Post Office - Nagpur Region</title>
+<style>
+  :root{--navy:#12385b;--blue:#1769aa;--line:#d9e2ec;--bg:#f4f7fb;--text:#1d2939;--muted:#667085;--green:#137333;--red:#b42318;--white:#fff}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Inter,Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--text)}
+  header{background:linear-gradient(135deg,#103a60,#1769aa);color:#fff;padding:18px 22px;position:sticky;top:0;z-index:10;box-shadow:0 2px 10px #0002}
+  header h1{font-size:23px;margin:0 0 4px;font-weight:700}
+  header p{margin:0;font-size:13px;opacity:.9}
+  .wrap{max-width:1500px;margin:18px auto;padding:0 16px}
+  .toolbar,.card{background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 2px 8px #1d29390b}
+  .tabs{display:flex;gap:8px;margin-bottom:14px}
+  .tab{border:1px solid var(--line);background:#fff;padding:10px 16px;border-radius:9px;cursor:pointer;font-weight:700;color:var(--navy)}
+  .tab.active{background:var(--navy);color:#fff}
+  .panel{display:none}.panel.active{display:block}
+  .card{padding:16px;margin-bottom:14px}
+  .card h2{font-size:17px;margin:0 0 14px;color:var(--navy)}
+  .grid{display:grid;grid-template-columns:repeat(4,minmax(180px,1fr));gap:12px}
+  label{font-size:12px;font-weight:700;color:#475467;display:block;margin-bottom:5px}
+  select,input,button{font:inherit}
+  select,input[type=text]{width:100%;height:40px;border:1px solid #cbd5e1;border-radius:8px;padding:0 10px;background:#fff;outline:none}
+  select:focus,input:focus{border-color:#1769aa;box-shadow:0 0 0 3px #1769aa18}
+  .search-wrap{position:relative}
+  .search-list{position:absolute;top:44px;left:0;right:0;background:#fff;border:1px solid var(--line);border-radius:8px;max-height:260px;overflow:auto;z-index:30;box-shadow:0 6px 20px #0002;display:none}
+  .search-item{padding:9px 10px;cursor:pointer;font-size:13px;border-bottom:1px solid #f0f2f5}
+  .search-item:hover{background:#eef6ff}
+  .hint{font-size:11px;color:var(--muted);margin-top:4px}
+  .actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:14px}
+  button{border:0;border-radius:8px;padding:10px 15px;cursor:pointer;font-weight:700}
+  .primary{background:var(--blue);color:#fff}.secondary{background:#eef2f6;color:#344054}.danger{background:#fff0ef;color:var(--red)}
+  .status{font-size:12px;color:var(--muted);margin-left:auto}
+  .vrow{display:grid;grid-template-columns:1fr auto;gap:8px;margin-bottom:8px}
+  .remove{width:40px;padding:0;background:#fff0ef;color:var(--red);font-size:18px}
+  .stats{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:14px}
+  .stat{background:#fff;border:1px solid var(--line);border-radius:10px;padding:13px}
+  .stat .n{font-size:23px;font-weight:800;color:var(--navy)}.stat .l{font-size:11px;color:var(--muted);margin-top:2px}
+  .table-wrap{overflow:auto;max-height:620px;border:1px solid var(--line);border-radius:9px}
+  table{border-collapse:collapse;width:100%;font-size:12px;background:#fff}
+  th,td{padding:8px 9px;border-bottom:1px solid #e7ecf1;text-align:left;white-space:nowrap}
+  th{background:#edf4fb;color:var(--navy);position:sticky;top:0;z-index:2}
+  td.num{text-align:right}
+  .pill{display:inline-block;padding:3px 7px;border-radius:999px;font-size:10px;font-weight:800}
+  .mapped{background:#e8f5e9;color:var(--green)}.unmapped{background:#fff4e5;color:#9a6700}
+  .loading{padding:22px;text-align:center;color:var(--muted)}
+  .empty{padding:30px;text-align:center;color:var(--muted)}
+  .toast{position:fixed;right:18px;bottom:18px;background:#172b4d;color:#fff;padding:12px 15px;border-radius:9px;box-shadow:0 6px 25px #0003;display:none;z-index:100;max-width:420px;font-size:13px}
+  .toast.ok{background:#137333}.toast.err{background:#b42318}
+  @media(max-width:1000px){.grid{grid-template-columns:repeat(2,1fr)}.stats{grid-template-columns:repeat(3,1fr)}}
+  @media(max-width:650px){header h1{font-size:18px}.wrap{padding:0 8px}.grid,.stats{grid-template-columns:1fr}.tabs{overflow:auto}.tab{white-space:nowrap}.vrow{grid-template-columns:1fr 40px}}
+
+/* Standalone responsive enhancements */
+html,body{width:100%;overflow-x:hidden}
+.wrap{width:100%;max-width:1500px}
+.grid{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+.table-wrap{width:100%;overflow:auto;-webkit-overflow-scrolling:touch}
+.table-wrap table{min-width:900px}
+.search-list{max-height:280px;overflow:auto}
+@media(max-width:700px){
+  header{padding:14px 14px}
+  header h1{font-size:18px}
+  .wrap{margin:10px auto;padding:0 9px}
+  .tabs{overflow-x:auto;white-space:nowrap}
+  .tab{flex:0 0 auto}
+  .card{padding:12px}
+  .grid{grid-template-columns:1fr}
+  .actions button{width:100%}
+  #autoRefreshStatus{right:8px!important;bottom:8px!important;max-width:calc(100vw - 16px);white-space:normal}
+}
+
+  /* ===== Dashboard KPI / hierarchy enhancements ===== */
+  .dashboard-titlebar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+  .dashboard-titlebar h2{margin:0}
+  .live-badge{display:inline-flex;align-items:center;gap:7px;background:#eef8f1;color:#137333;border:1px solid #cce8d3;border-radius:999px;padding:6px 10px;font-size:11px;font-weight:800}
+  .live-dot{width:7px;height:7px;border-radius:50%;background:#21a366;box-shadow:0 0 0 4px #21a36618}
+  .kpi-grid{display:grid;grid-template-columns:repeat(4,minmax(190px,1fr));gap:12px;margin-bottom:12px}
+  .kpi{position:relative;overflow:hidden;border:1px solid #dbe4ef;border-radius:14px;padding:15px 16px;background:#fff;cursor:pointer;box-shadow:0 4px 14px rgba(18,56,91,.07);transition:.18s transform,.18s box-shadow,.18s border-color}
+  .kpi:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(18,56,91,.13);border-color:#9fc2e2}
+  .kpi:after{content:"";position:absolute;right:-22px;top:-28px;width:82px;height:82px;border-radius:50%;background:currentColor;opacity:.06}
+  .kpi .icon{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;font-size:17px;margin-bottom:10px;background:#edf4fb;color:#1769aa}
+  .kpi .num{font-size:25px;line-height:1;font-weight:850;color:#12385b;letter-spacing:-.4px}
+  .kpi .label{font-size:11px;color:#667085;margin-top:6px;font-weight:700}
+  .kpi .hint{font-size:10px;color:#98a2b3;margin-top:5px}
+  .kpi.office{color:#1769aa;background:linear-gradient(135deg,#ffffff 0%,#eaf4ff 100%);border-color:#b9d8f5}.kpi.office .icon{background:#dceeff}
+  .kpi.mapped{color:#137333;background:linear-gradient(135deg,#ffffff 0%,#eaf8ed 100%);border-color:#bfe3c8}.kpi.mapped .icon{background:#dff4e5;color:#137333}
+  .kpi.pending{color:#b54708;background:linear-gradient(135deg,#ffffff 0%,#fff4df 100%);border-color:#f0d09a}.kpi.pending .icon{background:#ffeac7;color:#b54708}
+  .kpi.percent{color:#6941c6;background:linear-gradient(135deg,#ffffff 0%,#f3edff 100%);border-color:#d7c5f7}.kpi.percent .icon{background:#e9ddff;color:#6941c6}
+  .kpi.village{color:#007c91;background:linear-gradient(135deg,#ffffff 0%,#e4faff 100%);border-color:#a9dfe8}.kpi.village .icon{background:#d2f5fa;color:#007c91}
+  .kpi.village-mapped{color:#137333;background:linear-gradient(135deg,#ffffff 0%,#e4f8ea 100%);border-color:#a9d8b6}.kpi.village-mapped .icon{background:#d5f0dc;color:#137333}
+  .kpi.village-pending{color:#c4320a;background:linear-gradient(135deg,#ffffff 0%,#fff0ea 100%);border-color:#efb7a7}.kpi.village-pending .icon{background:#ffe0d8;color:#c4320a}
+  .kpi.village-percent{color:#175cd3;background:linear-gradient(135deg,#ffffff 0%,#e9f1ff 100%);border-color:#b9cff5}.kpi.village-percent .icon{background:#dce8ff;color:#175cd3}
+  .kpi{border-width:1px 1px 4px 1px}
+  .kpi.office{box-shadow:0 5px 18px rgba(23,105,170,.16)}
+  .kpi.mapped{box-shadow:0 5px 18px rgba(19,115,51,.16)}
+  .kpi.pending{box-shadow:0 5px 18px rgba(181,71,8,.16)}
+  .kpi.percent{box-shadow:0 5px 18px rgba(105,65,198,.16)}
+  .kpi.village{box-shadow:0 5px 18px rgba(0,124,145,.18)}
+  .kpi.village-mapped{box-shadow:0 5px 18px rgba(19,115,51,.18)}
+  .kpi.village-pending{box-shadow:0 5px 18px rgba(196,50,10,.18)}
+  .kpi.village-percent{box-shadow:0 5px 18px rgba(23,92,211,.18)}
+  .kpi .label{color:currentColor}
+  .existing-map-banner{display:flex;align-items:center;gap:8px;margin:8px 0 10px;padding:8px 10px;border:1px solid #b9d8f5;border-radius:9px;background:#eef7ff;color:#12385b;font-size:12px;font-weight:700}
+  .existing-map-banner strong{color:#1769aa}
+  .vrow.existing-village{position:relative}
+  .vrow.existing-village:before{content:"Mapped";position:absolute;right:48px;top:10px;font-size:9px;font-weight:800;color:#137333;background:#e8f5e9;padding:3px 7px;border-radius:999px;z-index:1}
+
+  .hierarchy-table th{font-size:11px;text-align:center;vertical-align:middle}
+  .hierarchy-table td{vertical-align:middle;text-align:center}
+  .hierarchy-table .tree-cell{text-align:center}
+  .tree-cell{min-width:280px}
+  .tree-row{cursor:pointer}
+  .tree-row:hover td{background:#f8fbff}
+  .tree-row.level-0 td:first-child{font-weight:800;color:#12385b}
+  .tree-row.level-1 td:first-child{font-weight:700;color:#1769aa}
+  .tree-row.level-2 td:first-child{font-weight:700;color:#475467}
+  .tree-row.level-3 td:first-child{font-weight:600;color:#344054}
+  .tree-indent{display:inline-flex;align-items:center;gap:7px}
+  .tree-indent.l1{padding-left:24px}.tree-indent.l2{padding-left:48px}.tree-indent.l3{padding-left:72px}
+  .chevron{width:20px;height:20px;border-radius:6px;display:inline-grid;place-items:center;background:#edf4fb;color:#1769aa;font-size:11px;font-weight:900}
+  .leaf{width:20px;display:inline-block}
+  .count-badge{display:inline-block;margin-left:7px;padding:2px 6px;border-radius:999px;background:#f2f4f7;color:#667085;font-size:9px;font-weight:800}
+  .status-num{font-weight:800}
+  .status-mapped{color:#137333}.status-pending{color:#b54708}
+  .percent-good{color:#137333;font-weight:800}.percent-mid{color:#b54708;font-weight:800}.percent-zero{color:#b42318;font-weight:800}
+  .report-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .report-actions button{padding:8px 12px;font-size:12px}
+  .modal-backdrop{position:fixed;inset:0;background:rgba(15,35,55,.52);display:none;align-items:center;justify-content:center;padding:18px;z-index:2000;backdrop-filter:blur(2px)}
+  .modal-backdrop.open{display:flex}
+  .report-modal{width:min(1280px,96vw);height:min(86vh,900px);background:#fff;border-radius:16px;box-shadow:0 20px 70px rgba(0,0,0,.28);display:flex;flex-direction:column;overflow:hidden}
+  .modal-head{padding:14px 16px;border-bottom:1px solid #e5eaf0;display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .modal-head h3{margin:0;color:#12385b;font-size:16px}.modal-sub{font-size:11px;color:#667085;margin-top:3px}
+  .modal-body{padding:12px 14px;overflow:auto;flex:1}
+  .modal-foot{padding:10px 14px;border-top:1px solid #e5eaf0;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;font-size:11px;color:#667085}
+  .close-btn{width:36px;height:36px;padding:0;border-radius:9px;background:#f2f4f7;color:#344054;font-size:20px}
+  .modal-table{min-width:880px}
+  .modal-table th{background:#edf4fb}
+  .modal-table tr:hover td{background:#f8fbff}
+  .empty-report{padding:35px;text-align:center;color:#667085}
+  .filter-note{font-size:11px;color:#667085;margin-top:7px}
+  .export-btn{background:#12385b;color:#fff}.pdf-btn{background:#7f1d1d;color:#fff}.excel-btn{background:#137333;color:#fff}
+  @media(max-width:1100px){.kpi-grid{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:650px){
+    .kpi-grid{grid-template-columns:1fr 1fr;gap:8px}
+    .kpi{padding:12px}.kpi .num{font-size:20px}.kpi .label{font-size:10px}
+    .tree-cell{min-width:240px}
+    .modal-backdrop{padding:7px}.report-modal{width:99vw;height:92vh;border-radius:12px}
+  }
+  @media(max-width:430px){.kpi-grid{grid-template-columns:1fr 1fr}.kpi .icon{width:29px;height:29px;font-size:14px}.kpi .num{font-size:18px}}
+
+</style>
 </head>
-<body class="bg-slate-50">
-  <div id="root"></div>
-
-  <script type="text/babel" data-type="module">
-    import React, { useState, useMemo, useEffect } from 'https://esm.sh/react@18.2.0';
-    import { createRoot } from 'https://esm.sh/react-dom@18.2.0/client';
-    import {
-      Building2, Clock, AlertTriangle, FileText, Filter, Search, Plus, Trash2, Edit3, X, 
-      ChevronRight, ChevronLeft, CheckCircle2, Clock3, FileSpreadsheet, Save, RotateCcw, 
-      Check, Eye, ArrowUpDown, CheckSquare, Loader2
-    } from 'https://esm.sh/lucide-react@0.344.0';
-
-    function App({ data, updateItem, deleteItem, insertItem }) {
-      const headerEnvelope = useMemo(() => {
-        if (!data || data.length === 0) return null;
-        return (
-          data.find(
-            d =>
-              d.row &&
-              (d.row[0] === 'Timestamp' ||
-                String(d.row[1]).toLowerCase().includes('head post office') ||
-                String(d.row[3]).toLowerCase().includes('counter'))
-          ) || data[0]
-        );
-      }, [data]);
-
-      const headers = useMemo(() => {
-        return headerEnvelope ? headerEnvelope.row : [];
-      }, [headerEnvelope]);
-
-      const rawRows = useMemo(() => {
-        if (!data) return [];
-        return data.filter(
-          d =>
-            d.index_ !== (headerEnvelope ? headerEnvelope.index_ : 0) &&
-            d.row &&
-            d.row.some(c => c !== null && c !== undefined && String(c).trim() !== '')
-        );
-      }, [data, headerEnvelope]);
-
-      const records = useMemo(() => {
-        return rawRows.map(envelope => {
-          const r = envelope.row || [];
-          const timestamp = r[0] ? String(r[0]).trim() : '';
-          const hpo = r[1] ? String(r[1]).trim() : 'Not Specified';
-          const division = r[2] ? String(r[2]).trim() : '';
-          const counterAssigned = r[3] ? String(r[3]).trim() : 'Unassigned';
-
-          const counterDelays = [];
-          const counterSuggestions = [];
-          const processingTimes = [];
-
-          for (let i = 4; i <= 33; i += 3) {
-            const time = r[i];
-            const delay = r[i + 1];
-            const sug = r[i + 2];
-            if (time !== null && time !== undefined && String(time).trim() !== '') {
-              processingTimes.push(String(time).trim());
-            }
-            if (delay !== null && delay !== undefined && String(delay).trim() !== '') {
-              counterDelays.push(String(delay).trim());
-            }
-            if (sug !== null && sug !== undefined && String(sug).trim() !== '') {
-              counterSuggestions.push(String(sug).trim());
-            }
-          }
-
-          return {
-            index_: envelope.index_,
-            raw: r,
-            timestamp, hpo, division, counterAssigned, counterDelays, counterSuggestions,
-            processingTimes
-          };
-        });
-      }, [rawRows]);
-
-      const MASTER_HEAD_OFFICES = useMemo(() => [
-        { sr: 1, ho: 'Akola H.O', division: 'Akola Division' },
-        { sr: 2, ho: 'Amravati H.O', division: 'Amaravati Division' },
-        { sr: 3, ho: 'Paratwada H.O', division: 'Amaravati Division' },
-        { sr: 4, ho: 'Buldana H.O', division: 'Buldana Division' },
-        { sr: 5, ho: 'Khamgaon H.O', division: 'Buldana Division' },
-        { sr: 6, ho: 'Chandrapur H.O', division: 'Chandrapur Division' },
-        { sr: 7, ho: 'Gadchiroli H.O', division: 'Gadchiroli Division' },
-        { sr: 8, ho: 'Nagpur City H.O', division: 'Nagpur City Division' },
-        { sr: 9, ho: 'Nagpur G.P.O.', division: 'Nagpur City Division' },
-        { sr: 10, ho: 'Bhandara H.O', division: 'Nagpur Moffusil Division' },
-        { sr: 11, ho: 'Gondia H.O', division: 'Nagpur Moffusil Division' },
-        { sr: 12, ho: 'Kamthi H.O', division: 'Nagpur Moffusil Division' },
-        { sr: 13, ho: 'Wardha H.O', division: 'Wardha Division' },
-        { sr: 14, ho: 'Yeotmal H.O', division: 'Yeotmal Division' }
-      ], []);
-
-      const DIVISIONS_LIST = useMemo(() => [
-        'All Divisions', 'Akola Division', 'Amaravati Division', 'Buldana Division',
-        'Chandrapur Division', 'Gadchiroli Division', 'Nagpur City Division',
-        'Nagpur Moffusil Division', 'Wardha Division', 'Yeotmal Division'
-      ], []);
-
-      const [selectedDivision, setSelectedDivision] = useState('All Divisions');
-      const [selectedHpoFilter, setSelectedHpoFilter] = useState('ALL');
-      const [selectedDateFilter, setSelectedDateFilter] = useState('');
-      const [counterSortOrder, setCounterSortOrder] = useState('desc');
-
-      // FULLY RESTORED KNOWLEDGE BASE FOR SUGGESTIVE ANSWERS (Q35 to Q58 / Indices 34 to 57)
-      const SUGGESTIVE_ANSWERS = useMemo(() => ({
-        3: ['POSB / Financial Services', 'Mails / Speed Post / BNPL Booking', 'Treasury / Accounts', 'Aadhar Seva Kendra (CELC/UCL)', 'Delivery / Sub-Accounts', 'Other'],
-        time: ['2 minutes', '3 minutes', '5 minutes', '10 minutes', '15 minutes', '30 minutes', '1 day', '2 days', '3 days', '7 days'],
-        delay: ['System lag / Network issue', 'Customer docs incomplete', 'Approvals pending from DO', 'Passbook printer / Hardware issue', 'Customer unfamiliarity with forms', 'Server time-out'],
-        suggestion: ['Smooth functioning of network', 'Customer education & form guidelines', 'Single window approval', 'High-speed printer & scanner', 'SMS alerts for required documents', 'Resolve system glitches'],
-        34: ['Total -162 DD claim cases in SB and 14 cases in PLI/RPLI', 'Near about 200 death claim cases', '10-25 cases', '50+ claim cases', 'Zero pending cases'],
-        35: ['1 DAY in SB and 5 DAYS for end-to-end sanction in PLI', 'Average time 3 days', 'Within 7 days charter', '1-2 days in Finacle/McCamish registration', 'Same-day sanction'],
-        36: ['Passbook / Original Policy Bond / Certificate missing', 'Original Death Certificate / Non-availability of Digital Death Certificate', 'Witness identification / Missing signatures on prescribed forms', 'Proper KYC documents of Legal Heirs / Nominee', 'Succession Certificate / Legal Heir Certificate (in high-value cases)', 'Annexure / Form deficiencies (Affidavit, Letter of Disclaimer, Indemnity Bond)'],
-        37: ['Nomination not registered in old SB cases', 'Legal heir certificate procurement delay', 'Complex affidavit & indemnity bond notarization', 'Unfamiliarity with prescribed claim forms', 'Customer illiteracy regarding required annexures'],
-        38: ['Never', 'Rarely', 'Occasionally exceeds 7 days', 'Frequently exceeds 7-day charter timeline'],
-        39: ['Delay due to mismatch in nominee and depositor name', 'Physical transit of physical dockets between HO and DO', 'Lack of dedicated desk at DO', 'Repeated piecemeal queries raised', 'Staff shortage at Divisional Office'],
-        40: ['Queries regarding mismatch in legal heir name as per AOF and Aadhaar', 'Missing witness identification on claim form', 'Discrepancy in date of death across documents', 'KYC self-attestation missing on dockets', 'Correction in signature of claimant'],
-        41: ['Within a day', '2 to 3 days', 'Procedural delay in corporate agreement verification', 'Smooth onboarding within 48 hours', 'Customer KYC verification delay'],
-        42: ['Smooth API integration', 'Technical support unavailable', 'API manifestation latency', 'EDI auto-manifesting works well', 'Integration issues encountered'],
-        43: ['No issue', 'System not supported', 'Bulk upload timeout', 'Barcode duplicate validation failure', 'Network firewall blocking API calls'],
-        44: ['Smooth automated billing', 'Yes - occasional OTP delivery lag', 'Calculation errors with corporate tariff', 'No delay encountered', 'Manual override required for bulk discount'],
-        45: ['Dedicated pickup schedules adhered to efficiently', 'Mail sits idle awaiting scheduled vehicle', 'Vehicle punctuality needs monitoring', 'Smooth dispatch on schedule'],
-        46: ['Smooth throughput', 'System crashes/hangs with 100+ articles', 'High latency during peak counter hours', 'Fast barcode scanning', 'QR base booking required'],
-        47: ['Yes - resolved within 60 days', 'No - exceeds 60-day window', 'Mostly resolved within 15 days', 'Pending Divisional escalation'],
-        48: ['Lack of door-to-door tracking updates', 'Address incomplete / recipient unavailable', 'Delayed Return to Sender (RTS) processing', 'Delivery manifest mismatch', 'Late scanning at delivery hub'],
-        49: ['Shortage of staff', 'Inadequate training on Finacle/UCL/POS', 'Customer illiteracy/unfamiliarity with forms', 'Heavy seasonal counter rush', 'Passbook updating queues'],
-        50: ['Biometric scanner failures', 'Slow network bandwidth', 'Server time-outs', 'Passbook printer head issues', 'Frequent system hang'],
-        51: ['Redundant physical paperwork', 'Dual entry in register and software', 'Complex approval matrix', 'Excessive physical docket verification', 'Physical token register'],
-        52: ['Shortage of barcoded labels', 'Envelopes shortage', 'New account forms shortage', 'Thermal rolls shortage', 'Stationery supply adequate'],
-        53: ['Conflicting targets', 'Rigid daily cut-off times', 'Inaccurate reporting tools', 'Target vs actual counter time mismatch', 'System clock synchronization issue'],
-        54: ['Drinking water arrangement for customers', 'Inadequate counter ventilation', 'Lack of waiting chairs', 'Unorganized customer flow / lack of token display', 'Air conditioning / fan repair'],
-        55: ['No manual is helpful during failure of system', 'Need robust power backup / UPS', 'Counter lighting and air circulation', 'None / No other specific issues'],
-        56: ['Duplicate physical register entry', 'Manual dispatch book entry', 'Physical SB-3 token register', 'Repeated photocopies of ID proofs', 'Physical claim docket register'],
-        57: ['QR base booking for speed post', 'Assign willing & cooperative official at counter', 'High-speed dedicated leased line network', 'Single window clearance for claims', 'Digital self-service kiosk for claim forms', 'Elimination of duplicate physical register']
-      }), []);
-
-      const getSuggestionsForCol = (colIdx) => {
-        // Remove suggestions for Name of Head Post Office and Division as they are drop-down/readonly
-        if (colIdx === 1 || colIdx === 2) return []; 
-        
-        if (SUGGESTIVE_ANSWERS[colIdx]) return SUGGESTIVE_ANSWERS[colIdx];
-        if (colIdx >= 4 && colIdx <= 33) {
-          const mod = (colIdx - 4) % 3;
-          if (mod === 0) return SUGGESTIVE_ANSWERS.time;
-          if (mod === 1) return SUGGESTIVE_ANSWERS.delay;
-          if (mod === 2) return SUGGESTIVE_ANSWERS.suggestion;
-        }
-        return [];
-      };
-
-      const applySuggestion = (colIdx, sug) => {
-        setQaDraft(prev => {
-          const next = [...prev];
-          while (next.length <= colIdx) next.push(null);
-          const curr = String(next[colIdx] || '').trim();
-          if (!curr || curr === 'null' || curr === 'undefined') {
-            next[colIdx] = sug;
-          } else if (curr.includes(sug)) {
-            const parts = curr.split(',').map(s => s.trim()).filter(s => s && s !== sug);
-            next[colIdx] = parts.join(', ');
-          } else {
-            next[colIdx] = `${curr}, ${sug}`;
-          }
-          return next;
-        });
-      };
-
-      const [activeResponseIndex, setActiveResponseIndex] = useState(null);
-      const [qaDraft, setQaDraft] = useState([]);
-      const [qaFilter, setQaFilter] = useState('all');
-      const [qaSearch, setQaSearch] = useState('');
-      const [isSaveSuccess, setIsSaveSuccess] = useState(false);
-
-      const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-      const [deleteConfirmIndex, setDeleteConfirmIndex] = useState(null);
-
-      const hoSubmissionStats = useMemo(() => {
-        return MASTER_HEAD_OFFICES.map(item => {
-          const matching = records.filter(r => {
-            if (!r.hpo) return false;
-            const cleanR = r.hpo.toLowerCase().replace(/[^a-z0-9]/g, '');
-            const cleanM = item.ho.toLowerCase().replace(/[^a-z0-9]/g, '');
-            const isMatch = cleanR.includes(cleanM) || cleanM.includes(cleanR);
-            if (!isMatch) return false;
-            if (selectedDateFilter && (!r.timestamp || !r.timestamp.startsWith(selectedDateFilter))) return false;
-            return true;
-          });
-          const count = matching.length;
-          let lastRecorded = '-';
-          if (count > 0) {
-            const sorted = [...matching].sort((a, b) => (b.timestamp || '').localeCompare(a.timestamp || ''));
-            lastRecorded = sorted[0].timestamp || '-';
-          }
-          return {
-            sr: item.sr, ho: item.ho, division: item.division,
-            status: count > 0 ? 'Submitted' : 'Pending', countersLogged: count, lastRecorded, matchingRecords: matching
-          };
-        });
-      }, [MASTER_HEAD_OFFICES, records, selectedDateFilter]);
-
-      const kpiMetrics = useMemo(() => {
-        const totalHeadOffices = MASTER_HEAD_OFFICES.length;
-        const surveysSubmitted = hoSubmissionStats.filter(h => h.status === 'Submitted').length;
-        const officesPending = Math.max(0, totalHeadOffices - surveysSubmitted);
-        const totalResponsesLogged = records.length;
-        return { totalHeadOffices, surveysSubmitted, officesPending, totalResponsesLogged };
-      }, [MASTER_HEAD_OFFICES.length, hoSubmissionStats, records.length]);
-
-      const filteredHOList = useMemo(() => {
-        const list = hoSubmissionStats.filter(item => {
-          if (selectedDivision !== 'All Divisions' && item.division !== selectedDivision) return false;
-          if (selectedHpoFilter !== 'ALL' && item.ho !== selectedHpoFilter) return false;
-          return true;
-        });
-        return [...list].sort((a, b) => {
-          if (counterSortOrder === 'asc') return a.countersLogged - b.countersLogged || a.sr - b.sr;
-          return b.countersLogged - a.countersLogged || a.sr - b.sr;
-        });
-      }, [hoSubmissionStats, selectedDivision, selectedHpoFilter, counterSortOrder]);
-
-      const filteredResponses = useMemo(() => {
-        return records.filter(r => {
-          if (selectedDateFilter && (!r.timestamp || !r.timestamp.startsWith(selectedDateFilter))) return false;
-          if (selectedDivision !== 'All Divisions') {
-            const matchedHO = MASTER_HEAD_OFFICES.find(m => {
-              const cleanR = (r.hpo || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-              const cleanM = m.ho.toLowerCase().replace(/[^a-z0-9]/g, '');
-              return cleanR.includes(cleanM) || cleanM.includes(cleanR);
-            });
-            if (!matchedHO || matchedHO.division !== selectedDivision) return false;
-          }
-          if (selectedHpoFilter !== 'ALL' && r.hpo !== selectedHpoFilter) return false;
-          return true;
-        });
-      }, [records, selectedDateFilter, selectedDivision, selectedHpoFilter, MASTER_HEAD_OFFICES]);
-
-      const openQAModal = (indexInFiltered) => {
-        setActiveResponseIndex(indexInFiltered);
-        const resp = filteredResponses[indexInFiltered];
-        if (resp && resp.raw) setQaDraft([...resp.raw]);
-        else setQaDraft([]);
-        setIsSaveSuccess(false);
-      };
-
-      const closeQAModal = () => {
-        setActiveResponseIndex(null);
-        setQaDraft([]);
-        setIsSaveSuccess(false);
-      };
-
-      const handlePrevResponse = () => {
-        if (activeResponseIndex !== null && activeResponseIndex > 0) {
-          const nextIdx = activeResponseIndex - 1;
-          setActiveResponseIndex(nextIdx);
-          const resp = filteredResponses[nextIdx];
-          setQaDraft(resp && resp.raw ? [...resp.raw] : []);
-          setIsSaveSuccess(false);
-        }
-      };
-
-      const handleNextResponse = () => {
-        if (activeResponseIndex !== null && activeResponseIndex < filteredResponses.length - 1) {
-          const nextIdx = activeResponseIndex + 1;
-          setActiveResponseIndex(nextIdx);
-          const resp = filteredResponses[nextIdx];
-          setQaDraft(resp && resp.raw ? [...resp.raw] : []);
-          setIsSaveSuccess(false);
-        }
-      };
-
-      const updateDraftField = (colIdx, val) => {
-        setQaDraft(prev => {
-          const next = [...prev];
-          while (next.length <= colIdx) next.push(null);
-          next[colIdx] = val;
-          return next;
-        });
-      };
-
-      const handleSaveQADraft = async () => {
-        if (activeResponseIndex === null || !filteredResponses[activeResponseIndex]) return;
-        const currentItem = filteredResponses[activeResponseIndex];
-        const maxLen = Math.max(headers.length, qaDraft.length, 58);
-        const updatedRow = new Array(maxLen).fill('');
-
-        for (let i = 0; i < maxLen; i++) {
-          updatedRow[i] = qaDraft[i] !== undefined && qaDraft[i] !== null ? qaDraft[i] : (currentItem.raw[i] !== undefined && currentItem.raw[i] !== null ? currentItem.raw[i] : '');
-        }
-
-        await updateItem(currentItem.index_, updatedRow);
-        setIsSaveSuccess(true);
-        setTimeout(() => setIsSaveSuccess(false), 2500);
-      };
-
-      const handleDeleteRow = async (index_) => {
-        setDeleteConfirmIndex(null);
-        await deleteItem(index_);
-        if (activeResponseIndex !== null) closeQAModal();
-      };
-
-      const initNewDraft = (defaultHo) => {
-        const totalCols = Math.max(headers.length, 58);
-        const arr = new Array(totalCols).fill('');
-        arr[0] = new Date().toISOString().slice(0, 19);
-        arr[1] = defaultHo || 'Akola H.O';
-        const found = MASTER_HEAD_OFFICES.find(m => m.ho === arr[1]);
-        arr[2] = found ? found.division : 'Akola Division';
-        arr[3] = 'POSB / Financial Services';
-        return arr;
-      };
-
-      const [addDraft, setAddDraft] = useState(() => initNewDraft());
-      
-      const updateAddDraftField = (colIdx, val) => {
-        setAddDraft(prev => {
-          const next = [...prev];
-          while (next.length <= colIdx) next.push('');
-          next[colIdx] = val;
-          // Auto link division text box to chosen HPO dropdown
-          if (colIdx === 1) {
-            const matched = MASTER_HEAD_OFFICES.find(m => m.ho === val);
-            if (matched) next[2] = matched.division;
-          }
-          return next;
-        });
-      };
-
-      const applySuggestionToAdd = (colIdx, sug) => {
-        setAddDraft(prev => {
-          const next = [...prev];
-          while (next.length <= colIdx) next.push('');
-          const curr = String(next[colIdx] || '').trim();
-          if (!curr || curr === 'null' || curr === 'undefined') {
-            next[colIdx] = sug;
-          } else if (curr.includes(sug)) {
-            const parts = curr.split(',').map(s => s.trim()).filter(s => s && s !== sug);
-            next[colIdx] = parts.join(', ');
-          } else {
-            next[colIdx] = `${curr}, ${sug}`;
-          }
-          return next;
-        });
-      };
-
-      const handleAddNewRecord = async () => {
-        const maxLen = Math.max(headers.length, addDraft.length, 58);
-        const newRow = new Array(maxLen).fill('');
-        for (let i = 0; i < maxLen; i++) {
-          const val = addDraft[i];
-          newRow[i] = val !== undefined && val !== null && String(val).trim() !== '' ? val : '';
-        }
-        if (!newRow[0]) newRow[0] = new Date().toISOString().slice(0, 19);
-        
-        await insertItem(undefined, newRow);
-        
-        setIsAddModalOpen(false);
-        setAddDraft(initNewDraft());
-      };
-
-      const getQuestionCategory = (idx) => {
-        if (idx <= 3) return 'General Information';
-        if (idx <= 33) return 'Counter Processing & Delays';
-        if (idx <= 40) return 'Deceased Claims Diagnostics';
-        if (idx <= 48) return 'BNPL & Logistics Operations';
-        if (idx <= 55) return 'Ishikawa 6M Lean Factors';
-        return 'Kaizen & Continuous Improvement';
-      };
-
-      const getQuestionLabel = (idx) => {
-        if (headers && headers[idx] && String(headers[idx]).trim()) return String(headers[idx]).trim();
-        if (idx === 0) return 'Timestamp';
-        if (idx === 1) return 'Head Post Office';
-        if (idx === 2) return 'Division / Region';
-        if (idx === 3) return 'Counter Assigned';
-        if (idx >= 4 && idx <= 33) {
-            const n = Math.floor((idx-4)/3) + 1;
-            const m = (idx-4)%3;
-            if (m === 0) return `C${n} - Time Taken`;
-            if (m === 1) return `C${n} - Delay Reason`;
-            return `C${n} - Suggestion`;
-        }
-        return `Question #${idx + 1}`;
-      };
-
-      const activeResponse = activeResponseIndex !== null ? filteredResponses[activeResponseIndex] : null;
-
-      const modalQuestions = useMemo(() => {
-        if (!activeResponse) return [];
-        const totalCols = Math.max(headers.length, qaDraft.length, (activeResponse.raw || []).length, 58);
-        const list = [];
-        for (let i = 0; i < totalCols; i++) {
-          const qText = getQuestionLabel(i);
-          const answerVal = qaDraft[i] !== undefined ? qaDraft[i] : (activeResponse.raw[i] ?? '');
-          const strAnswer = String(answerVal ?? '').trim();
-          const hasAnswer = strAnswer !== '' && strAnswer !== 'null' && strAnswer !== 'undefined';
-
-          if (qaFilter === 'answered' && !hasAnswer) continue;
-          if (qaSearch.trim()) {
-            const q = qaSearch.toLowerCase();
-            const matchesQ = qText.toLowerCase().includes(q);
-            const matchesA = strAnswer.toLowerCase().includes(q);
-            if (!matchesQ && !matchesA) continue;
-          }
-          list.push({ colIdx: i, question: qText, category: getQuestionCategory(i), answer: answerVal ?? '', hasAnswer });
-        }
-        return list;
-      }, [activeResponse, headers, qaDraft, qaFilter, qaSearch]);
-
-      return (
-        <div className="min-h-screen bg-slate-50 text-slate-900 font-sans flex flex-col antialiased relative">
-          
-          <header className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <div className="flex items-center justify-between h-16 gap-4">
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-red-600 to-amber-600 flex items-center justify-center text-white shadow-sm flex-shrink-0">
-                    <Building2 className="w-5 h-5" />
-                  </div>
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <h1 className="text-base sm:text-lg font-bold text-slate-900 truncate">
-                        Operational Efficiency, Service Standards & Process Improvement (Head Post Offices) - Nagpur Region
-                      </h1>
-                    </div>
-                    <p className="text-xs text-slate-500 hidden sm:block truncate">
-                      Head Post Office Operations & Survey Responses
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  <button
-                    onClick={() => {
-                      setAddDraft(initNewDraft());
-                      setIsAddModalOpen(true);
-                    }}
-                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white text-xs sm:text-sm font-medium transition shadow-sm cursor-pointer"
-                  >
-                    <Plus className="w-4 h-4" />
-                    <span>Add Response</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-          </header>
-
-          <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-            <section aria-label="Key Performance Indicators">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-                <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between hover:border-slate-300 transition">
-                  <div className="flex items-center justify-between text-slate-500">
-                    <span className="text-xs font-semibold uppercase tracking-wider text-slate-600">Total Offices</span>
-                    <Building2 className="w-4 h-4 text-slate-500" />
-                  </div>
-                  <div className="mt-2">
-                    <span className="text-3xl font-bold text-slate-900">{kpiMetrics.totalHeadOffices}</span>
-                  </div>
-                </div>
-
-                <div onClick={() => { if (filteredResponses.length > 0) openQAModal(0); }} className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between hover:border-emerald-400 hover:shadow-md transition cursor-pointer group">
-                  <div className="flex items-center justify-between text-slate-500">
-                    <span className="text-xs font-semibold uppercase tracking-wider text-emerald-700">Submitted</span>
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                  </div>
-                  <div className="mt-2">
-                    <div className="flex items-baseline justify-between">
-                      <span className="text-3xl font-bold text-emerald-600">{kpiMetrics.surveysSubmitted}</span>
-                      <span className="text-[11px] font-semibold text-emerald-700 group-hover:underline flex items-center gap-1"><Eye className="w-3 h-3" /> View Q&A</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between hover:border-slate-300 transition">
-                  <div className="flex items-center justify-between text-slate-500">
-                    <span className="text-xs font-semibold uppercase tracking-wider text-amber-700">Pending</span>
-                    <Clock3 className="w-4 h-4 text-amber-500" />
-                  </div>
-                  <div className="mt-2">
-                    <span className="text-3xl font-bold text-amber-600">{kpiMetrics.officesPending}</span>
-                  </div>
-                </div>
-
-                <div onClick={() => { if (filteredResponses.length > 0) openQAModal(0); }} className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between hover:border-red-400 hover:shadow-md transition cursor-pointer group">
-                  <div className="flex items-center justify-between text-slate-500">
-                    <span className="text-xs font-semibold uppercase tracking-wider text-red-700">Total Responses</span>
-                    <FileSpreadsheet className="w-4 h-4 text-red-600" />
-                  </div>
-                  <div className="mt-2">
-                    <div className="flex items-baseline justify-between">
-                      <span className="text-3xl font-bold text-red-600">{kpiMetrics.totalResponsesLogged}</span>
-                      <span className="text-[11px] font-semibold text-red-700 group-hover:underline flex items-center gap-1"><Eye className="w-3 h-3" /> View Q&A</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </section>
-
-            <section className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-              <div className="p-4 sm:p-5 border-b border-slate-200 space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                  <div>
-                    <h2 className="text-sm sm:text-base font-bold text-slate-900 flex items-center gap-2">
-                      <Building2 className="w-4 h-4 text-red-600" /> Submission Position
-                    </h2>
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1 border-t border-slate-100">
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-600 mb-1 flex items-center gap-1"><Filter className="w-3 h-3 text-red-600" /> Postal Division</label>
-                    <select value={selectedDivision} onChange={e => setSelectedDivision(e.target.value)} className="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-red-500">
-                      {DIVISIONS_LIST.map(div => (<option key={div} value={div}>{div}</option>))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-600 mb-1 flex items-center gap-1"><Building2 className="w-3 h-3 text-red-600" /> Head Post Office</label>
-                    <select value={selectedHpoFilter} onChange={e => setSelectedHpoFilter(e.target.value)} className="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-red-500">
-                      <option value="ALL">All Head Post Offices</option>
-                      {MASTER_HEAD_OFFICES.map(h => (<option key={h.ho} value={h.ho}>{h.ho}</option>))}
-                    </select>
-                  </div>
-                </div>
-              </div>
-
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs text-slate-600">
-                  <thead className="bg-slate-50 text-slate-700 uppercase font-semibold border-b border-slate-200">
-                    <tr>
-                      <th className="px-4 py-3 w-12 text-center">Sr</th>
-                      <th className="px-4 py-3 whitespace-nowrap">Head Post Office (HO)</th>
-                      <th className="px-4 py-3 whitespace-nowrap">Postal Division</th>
-                      <th className="px-4 py-3 whitespace-nowrap">Status</th>
-                      <th className="px-4 py-3 text-center whitespace-nowrap cursor-pointer hover:bg-slate-100" onClick={() => setCounterSortOrder(prev => prev === 'desc' ? 'asc' : 'desc')}>
-                        <span className="inline-flex items-center justify-center gap-1.5 text-slate-800 font-bold">Counters Logged <ArrowUpDown className="w-3.5 h-3.5 text-red-600" /></span>
-                      </th>
-                      <th className="px-4 py-3 text-right whitespace-nowrap">Action</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-200">
-                    {filteredHOList.map(item => {
-                      const handleOfficeClick = () => {
-                        const matchIdx = filteredResponses.findIndex(r => r.hpo === item.ho);
-                        if (matchIdx !== -1) { openQAModal(matchIdx); } 
-                        else {
-                          const allIdx = records.findIndex(r => r.hpo === item.ho);
-                          if (allIdx !== -1) {
-                            setSelectedHpoFilter(item.ho); setSelectedDivision('All Divisions');
-                            openQAModal(records.findIndex(r => r.hpo === item.ho));
-                          } else {
-                            setAddDraft(initNewDraft(item.ho));
-                            setIsAddModalOpen(true);
-                          }
-                        }
-                      };
-
-                      return (
-                        <tr key={item.sr} className="hover:bg-red-50/50 transition cursor-pointer group" onClick={handleOfficeClick}>
-                          <td className="px-4 py-3 font-mono text-center text-slate-500 font-semibold group-hover:text-red-700">{item.sr}</td>
-                          <td className="px-4 py-3 font-bold text-slate-900 whitespace-nowrap group-hover:text-red-700">
-                            <span className="flex items-center gap-1.5">
-                              <Building2 className="w-3.5 h-3.5 text-slate-400 group-hover:text-red-600" />
-                              <span className="underline decoration-dotted underline-offset-2">{item.ho}</span>
-                            </span>
-                          </td>
-                          <td className="px-4 py-3 text-slate-700 whitespace-nowrap">{item.division}</td>
-                          <td className="px-4 py-3 whitespace-nowrap">
-                            {item.status === 'Submitted' ? (
-                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200"><CheckCircle2 className="w-3 h-3" /> Submitted</span>
-                            ) : (
-                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200"><Clock3 className="w-3 h-3" /> Pending</span>
-                            )}
-                          </td>
-                          <td className="px-4 py-3 text-center font-bold text-slate-800 whitespace-nowrap">
-                            <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs ${item.countersLogged > 0 ? 'bg-red-100 text-red-800 border border-red-200' : 'bg-slate-100 text-slate-500'}`}>
-                              {item.countersLogged}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3 text-right whitespace-nowrap">
-                            {item.countersLogged > 0 ? (
-                              <button type="button" onClick={(e) => { e.stopPropagation(); handleOfficeClick(); }} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-slate-900 hover:bg-slate-800 text-white text-xs font-medium cursor-pointer"><Eye className="w-3 h-3" /> View Q&A</button>
-                            ) : (
-                              <button type="button" onClick={(e) => { e.stopPropagation(); setAddDraft(initNewDraft(item.ho)); setIsAddModalOpen(true); }} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md border border-slate-300 hover:bg-slate-100 text-slate-600 text-xs font-medium cursor-pointer"><Plus className="w-3 h-3" /> Log Survey</button>
-                            )}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </section>
-          </main>
-
-          {/* TWO-SIDED QUESTION & ANSWER POP-UP MODAL (EDIT VIEW) */}
-          {activeResponse && (
-            <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 overflow-y-auto">
-              <div className="bg-white rounded-2xl max-w-5xl w-full max-h-[94vh] flex flex-col shadow-2xl overflow-hidden border border-slate-300">
-                <div className="px-5 py-3.5 bg-slate-900 text-white flex items-center justify-between border-b border-slate-800 flex-shrink-0">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-8 h-8 rounded-lg bg-red-600 flex items-center justify-center text-white flex-shrink-0"><Building2 className="w-4 h-4" /></div>
-                    <div className="min-w-0">
-                      <h3 className="text-sm sm:text-base font-bold text-white truncate">{activeResponse.hpo} — Survey Q&A</h3>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    <div className="flex items-center bg-slate-800 rounded-lg p-0.5 border border-slate-700 mr-2">
-                        <button onClick={handlePrevResponse} disabled={activeResponseIndex <= 0} className="p-1.5 text-slate-300 hover:text-white rounded-md hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition" title="Previous Survey">
-                          <ChevronLeft className="w-4 h-4" />
-                        </button>
-                        <span className="text-[11px] font-semibold text-slate-300 px-2 min-w-[50px] text-center">
-                          {activeResponseIndex + 1} / {filteredResponses.length}
-                        </span>
-                        <button onClick={handleNextResponse} disabled={activeResponseIndex >= filteredResponses.length - 1} className="p-1.5 text-slate-300 hover:text-white rounded-md hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition" title="Next Survey">
-                          <ChevronRight className="w-4 h-4" />
-                        </button>
-                    </div>
-
-                    <div className="w-px h-5 bg-slate-700 hidden sm:block"></div>
-
-                    <button onClick={() => setDeleteConfirmIndex(activeResponse.index_)} className="p-1.5 text-slate-400 hover:text-red-400 rounded-lg hover:bg-slate-800 transition cursor-pointer"><Trash2 className="w-5 h-5" /></button>
-                    <button onClick={closeQAModal} className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition cursor-pointer"><X className="w-5 h-5" /></button>
-                  </div>
-                </div>
-
-                <div className="flex-1 overflow-y-auto p-4 sm:p-6">
-                  <table className="w-full text-left border-collapse">
-                    <thead className="bg-slate-100 text-slate-700 text-xs font-bold border-b border-slate-200 sticky top-0 z-10">
-                      <tr>
-                        <th className="px-4 py-3 w-16 text-center">#</th>
-                        <th className="px-4 py-3 w-5/12">Survey Question</th>
-                        <th className="px-4 py-3 w-7/12">Recorded Answer (Editable)</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-200 text-xs">
-                      {modalQuestions.map((item) => (
-                        <tr key={item.colIdx} className="hover:bg-slate-50/70 transition">
-                          <td className="px-4 py-3.5 align-top text-center font-mono font-bold text-slate-700 bg-slate-50 border-r border-slate-100">Q{item.colIdx + 1}</td>
-                          <td className="px-4 py-3.5 align-top">
-                            <span className="inline-block text-[10px] font-semibold text-red-700 bg-red-50 px-2 py-0.5 rounded border border-red-200 mb-1">{item.category}</span>
-                            <p className="font-semibold text-slate-900 text-xs">{item.question}</p>
-                          </td>
-                          <td className="px-4 py-3.5 align-top">
-                            
-                            {item.colIdx === 1 ? (
-                              <select
-                                value={item.answer ?? ''}
-                                onChange={(e) => {
-                                  const val = e.target.value;
-                                  setQaDraft(prev => {
-                                    const next = [...prev];
-                                    while(next.length <= 2) next.push(null);
-                                    next[1] = val;
-                                    const match = MASTER_HEAD_OFFICES.find(m => m.ho === val);
-                                    if (match) next[2] = match.division;
-                                    return next;
-                                  });
-                                }}
-                                className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-red-500"
-                              >
-                                <option value="" disabled>Select Head Post Office</option>
-                                {MASTER_HEAD_OFFICES.map(h => <option key={h.ho} value={h.ho}>{h.ho}</option>)}
-                              </select>
-                            ) : item.colIdx === 2 ? (
-                              <input
-                                type="text"
-                                readOnly
-                                value={item.answer ?? ''}
-                                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg text-slate-600 bg-slate-100 cursor-not-allowed focus:outline-none"
-                              />
-                            ) : (
-                              <textarea rows="2" value={item.answer ?? ''} onChange={(e) => updateDraftField(item.colIdx, e.target.value)} className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-red-500" />
-                            )}
-
-                            {getSuggestionsForCol(item.colIdx).length > 0 && (
-                                <div className="mt-1 flex flex-wrap gap-1">
-                                    {getSuggestionsForCol(item.colIdx).map((sug, i) => (
-                                        <button key={i} onClick={() => applySuggestion(item.colIdx, sug)} className="text-[10px] bg-slate-100 hover:bg-red-50 px-2 py-0.5 rounded border border-slate-200 hover:border-red-200 cursor-pointer text-slate-600 transition">+{sug}</button>
-                                    ))}
-                                </div>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-
-                <div className="px-5 py-3 bg-slate-50 border-t border-slate-200 flex justify-between items-center flex-shrink-0">
-                  <div className="flex items-center gap-2">
-                      <button onClick={handlePrevResponse} disabled={activeResponseIndex <= 0} className="inline-flex items-center gap-1 px-3 py-1.5 border border-slate-300 hover:bg-slate-100 rounded-lg text-xs font-medium text-slate-700 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition">
-                        <ChevronLeft className="w-4 h-4" /> Previous
-                      </button>
-                      <button onClick={handleNextResponse} disabled={activeResponseIndex >= filteredResponses.length - 1} className="inline-flex items-center gap-1 px-3 py-1.5 border border-slate-300 hover:bg-slate-100 rounded-lg text-xs font-medium text-slate-700 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition">
-                        Next <ChevronRight className="w-4 h-4" />
-                      </button>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                      <button onClick={closeQAModal} className="px-4 py-1.5 border border-slate-300 hover:bg-slate-100 rounded-lg text-xs font-medium text-slate-700 cursor-pointer">Close</button>
-                      <button onClick={handleSaveQADraft} className="px-4 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-semibold cursor-pointer">Save Changes</button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* FULL "LOG NEW RESPONSE" ADD MODAL */}
-          {isAddModalOpen && (
-            <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 overflow-y-auto">
-              <div className="bg-white rounded-2xl max-w-5xl w-full max-h-[94vh] flex flex-col shadow-2xl overflow-hidden border border-slate-300 animate-in fade-in zoom-in-95 duration-150">
-                <div className="px-5 py-3.5 bg-slate-900 text-white flex items-center justify-between border-b border-slate-800 flex-shrink-0">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-8 h-8 rounded-lg bg-emerald-600 flex items-center justify-center text-white flex-shrink-0">
-                      <Plus className="w-4 h-4" />
-                    </div>
-                    <div className="min-w-0">
-                      <h3 className="text-sm sm:text-base font-bold text-white truncate">
-                        Log New Head Post Office Survey Response
-                      </h3>
-                      <p className="text-xs text-slate-400 truncate">
-                        Complete operational parameters & lean questions with suggestive answers
-                      </p>
-                    </div>
-                  </div>
-
-                  <button
-                    onClick={() => setIsAddModalOpen(false)}
-                    className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition cursor-pointer"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
-                </div>
-
-                <div className="flex-1 overflow-y-auto p-4 sm:p-6">
-                  <table className="w-full text-left border-collapse">
-                    <thead className="bg-slate-100 text-slate-700 text-xs font-bold border-b border-slate-200 sticky top-0 z-10">
-                      <tr>
-                        <th className="px-4 py-3 w-16 text-center whitespace-nowrap">#</th>
-                        <th className="px-4 py-3 w-5/12 whitespace-nowrap">Survey Question & Parameter</th>
-                        <th className="px-4 py-3 w-7/12 whitespace-nowrap">Response Answer</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-200 text-xs">
-                      {Array.from({ length: Math.max(headers.length, addDraft.length, 58) }).map((_, i) => {
-                        const qText = getQuestionLabel(i);
-                        const ansVal = addDraft[i] ?? '';
-                        const strAns = String(ansVal).trim();
-                        const category = getQuestionCategory(i);
-                        const suggestions = getSuggestionsForCol(i);
-                        const isLong = strAns.length > 65 || i >= 34;
-
-                        return (
-                          <tr key={i} className="hover:bg-slate-50/70 transition">
-                            <td className="px-4 py-3.5 align-top text-center">
-                              <span className="inline-flex items-center justify-center w-8 h-6 rounded bg-slate-100 font-mono text-[11px] font-bold text-slate-700 border border-slate-200">
-                                Q{i + 1}
-                              </span>
-                            </td>
-                            <td className="px-4 py-3.5 align-top space-y-1">
-                              <div>
-                                <span className="inline-block text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                                  {category}
-                                </span>
-                              </div>
-                              <p className="font-semibold text-slate-900 text-xs leading-relaxed">
-                                {qText}
-                              </p>
-                            </td>
-                            <td className="px-4 py-3.5 align-top space-y-2">
-                              
-                              {i === 1 ? (
-                                <select
-                                  value={ansVal}
-                                  onChange={e => updateAddDraftField(i, e.target.value)}
-                                  className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                                >
-                                  <option value="" disabled>Select Head Post Office...</option>
-                                  {MASTER_HEAD_OFFICES.map(h => (
-                                    <option key={h.ho} value={h.ho}>{h.ho} ({h.division})</option>
-                                  ))}
-                                </select>
-                              ) : i === 2 ? (
-                                <input
-                                  type="text"
-                                  readOnly
-                                  value={ansVal}
-                                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg text-slate-600 bg-slate-100 cursor-not-allowed focus:outline-none"
-                                />
-                              ) : isLong ? (
-                                <textarea
-                                  rows={Math.min(4, Math.max(2, Math.ceil(strAns.length / 50)))}
-                                  value={ansVal}
-                                  onChange={e => updateAddDraftField(i, e.target.value)}
-                                  placeholder="Type or click suggestive answers below..."
-                                  className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-y leading-relaxed"
-                                />
-                              ) : (
-                                <input
-                                  type="text"
-                                  value={ansVal}
-                                  onChange={e => updateAddDraftField(i, e.target.value)}
-                                  placeholder="Type or click suggestive answers below..."
-                                  className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                                />
-                              )}
-
-                              {suggestions.length > 0 && (
-                                <div className="pt-1">
-                                  <div className="flex flex-wrap items-center gap-1.5">
-                                    {suggestions.map((sug, sIdx) => {
-                                      const isContained = strAns.toLowerCase().includes(sug.toLowerCase());
-                                      return (
-                                        <button
-                                          key={sIdx}
-                                          type="button"
-                                          onClick={() => applySuggestionToAdd(i, sug)}
-                                          className={`text-[10px] px-2 py-0.5 rounded-md border transition cursor-pointer flex items-center gap-1 ${
-                                            isContained
-                                              ? 'bg-emerald-100 text-emerald-800 border-emerald-300 font-semibold'
-                                              : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200'
-                                          }`}
-                                        >
-                                          <span>{isContained ? '✓' : '+'} {sug}</span>
-                                        </button>
-                                      );
-                                    })}
-                                  </div>
-                                </div>
-                              )}
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-
-                <div className="px-5 py-3 bg-slate-50 border-t border-slate-200 flex justify-end gap-3 flex-shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => setIsAddModalOpen(false)}
-                    className="px-4 py-1.5 border border-slate-300 hover:bg-slate-100 rounded-lg text-xs font-medium text-slate-700 transition cursor-pointer"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleAddNewRecord}
-                    className="inline-flex items-center gap-1.5 px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold shadow-xs transition cursor-pointer"
-                  >
-                    <Plus className="w-4 h-4" /> Submit Survey Response
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* DELETE CONFIRMATION MODAL */}
-          {deleteConfirmIndex !== null && (
-            <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-              <div className="bg-white rounded-xl max-w-sm w-full p-5 shadow-xl border border-slate-200">
-                <div className="flex items-center gap-3 text-red-600 mb-3"><AlertTriangle className="w-6 h-6" /><h3 className="text-sm font-bold text-slate-900">Confirm Deletion</h3></div>
-                <p className="text-xs text-slate-600 mb-4">Are you sure you want to permanently delete this row? This change will persist immediately to the Google Sheet.</p>
-                <div className="flex items-center justify-end gap-2">
-                  <button onClick={() => setDeleteConfirmIndex(null)} className="px-3 py-1.5 border border-slate-300 rounded-lg text-xs font-medium text-slate-700 cursor-pointer">Cancel</button>
-                  <button onClick={() => handleDeleteRow(deleteConfirmIndex)} className="px-3 py-1.5 bg-red-600 text-white rounded-lg text-xs font-semibold cursor-pointer">Delete Row</button>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      );
-    }
-
-    // ============================================================================
-    // GOOGLE SHEETS LIVE DATA WRAPPER
-    // ============================================================================
-    function DashboardWrapper() {
-      // ⚠️ YOUR PROVIDED GOOGLE APPS SCRIPT WEB APP URL IS HERE ⚠️
-      const APP_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby2CQg6B7-OlJuGFC8B_pIUdfjlB9TBFYebe4lOYrYuCORSTpddEX2UwbsytzEJVjEnvg/exec';
-
-      const [data, setData] = useState([]);
-      const [isLoading, setIsLoading] = useState(true);
-      const [isSyncing, setIsSyncing] = useState(false);
-
-      // Fetch Data (GET)
-      const fetchSheetData = async () => {
-        setIsLoading(true);
-        try {
-          const res = await fetch(APP_SCRIPT_URL);
-          const json = await res.json();
-          setData(json);
-        } catch (e) {
-          console.error("Error fetching data from Google Sheets:", e);
-          alert("Failed to connect to Google Sheets. Check your App Script URL and ensure your Sheet is named correctly ('Data').");
-        }
-        setIsLoading(false);
-      };
-
-      useEffect(() => {
-        fetchSheetData();
-      }, []);
-
-      // Update Data (POST)
-      const updateItem = async (index_, newRow) => {
-        setIsSyncing(true);
-        setData(prev => prev.map(d => d.index_ === index_ ? { ...d, row: newRow } : d));
-        try {
-          await fetch(APP_SCRIPT_URL, {
-            method: 'POST',
-            body: JSON.stringify({ action: 'update', index_, row: newRow }) 
-          });
-        } catch (e) {
-          console.error("Update failed", e);
-          alert("Failed to save changes to Google Sheet.");
-          fetchSheetData(); 
-        }
-        setIsSyncing(false);
-      };
-
-      // Delete Data (POST)
-      const deleteItem = async (index_) => {
-        setIsSyncing(true);
-        setData(prev => prev.filter(d => d.index_ !== index_)); 
-        try {
-          await fetch(APP_SCRIPT_URL, {
-            method: 'POST',
-            body: JSON.stringify({ action: 'delete', index_ })
-          });
-          await fetchSheetData(); 
-        } catch (e) {
-          console.error("Delete failed", e);
-          alert("Failed to delete from Google Sheet.");
-          fetchSheetData();
-        }
-        setIsSyncing(false);
-      };
-
-      // Insert Data (POST)
-      const insertItem = async (_, newRow) => {
-        setIsSyncing(true);
-        try {
-          await fetch(APP_SCRIPT_URL, {
-            method: 'POST',
-            body: JSON.stringify({ action: 'insert', row: newRow })
-          });
-          await fetchSheetData(); 
-        } catch (e) {
-          console.error("Insert failed", e);
-          alert("Failed to add new record to Google Sheet.");
-        }
-        setIsSyncing(false);
-      };
-
-      if (isLoading) {
-        return (
-          <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center space-y-4">
-            <Loader2 className="w-10 h-10 text-red-600 animate-spin" />
-            <p className="text-sm font-semibold text-slate-600">Connecting to Google Sheets...</p>
+<body>
+<header>
+  <h1>Village Mapping • Delivery Post Office - Nagpur Region</h1>
+  <p>Direct Google Sheet sync • Delivery Office ↔ Village Mapping</p>
+</header>
+
+<div class="wrap">
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('mapping',this)">Village Mapping</button>
+    <button class="tab" onclick="showTab('dashboard',this)">Dashboard</button>
+  </div>
+
+  <section id="mapping" class="panel active">
+    <div class="card">
+      <h2>Map Village to Delivery Post Office</h2>
+      <div class="grid">
+        <div><label>Division Name</label><select id="division"><option value="">Select Division</option></select></div>
+        <div><label>Sub Division</label><select id="subdivision" disabled><option value="">Select Sub Division</option></select></div>
+        <div><label>SO Name</label><select id="so" disabled><option value="">Select SO Name</option></select></div>
+        <div>
+          <label>Office Name</label>
+          <div class="search-wrap">
+            <input id="officeSearch" type="text" placeholder="Search office..." autocomplete="off" disabled>
+            <div id="officeList" class="search-list"></div>
           </div>
-        );
+          <div class="hint" id="officeHint">Use Division → Sub Division → SO, or search Office Name directly.</div>
+        </div>
+      </div>
+      <input type="hidden" id="officeId">
+      <div class="card" style="margin:16px 0 0;padding:12px;background:#f8fafc">
+        <label>Village Name — add one or more villages</label>
+        <div id="existingMappingBanner" class="existing-map-banner" style="display:none"></div>
+        <div id="villageRows"></div>
+        <div class="actions">
+          <button class="secondary" onclick="addVillageRow()">＋ Add Village</button>
+          <button class="primary" onclick="submitMappings()">Submit Mapping</button>
+          <label style="display:flex;align-items:center;gap:7px;margin:0;font-weight:600">
+            <input type="checkbox" id="overwrite"> Overwrite an existing mapping
+          </label>
+        </div>
+      </div>
+      <div class="status" id="mappingStatus">Loading Google Sheet data…</div>
+      <div class="card" style="margin-top:14px">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+          <h3 style="margin:0">Village Mapping — Current Records</h3>
+          <span class="muted" id="mappingCount">0 records</span>
+        </div>
+        <div class="table-wrap" style="margin-top:10px">
+          <table id="mappingTable">
+            <thead>
+              <tr>
+                <th>office-id</th>
+                <th>office-name</th>
+                <th>office_type_code</th>
+                <th>pincode</th>
+                <th>sol_id</th>
+                <th>Division</th>
+                <th>Sub Division</th>
+                <th>SO Name</th>
+                <th>Village Name</th>
+              </tr>
+            </thead>
+            <tbody id="mappingBody">
+              <tr><td colspan="9" class="loading">Loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="dashboard" class="panel">
+    <div class="card">
+      <div class="dashboard-titlebar">
+        <div>
+          <h2>Village Mapping Position</h2>
+          <div class="filter-note">Click any KPI card to open its detailed list. The position report expands Division → Sub Division → SO Name → Delivery Office.</div>
+        </div>
+        <span class="live-badge"><span class="live-dot"></span> Google Sheet Live Sync</span>
+      </div>
+      <div class="grid">
+        <div><label>Division</label><select id="fDivision"><option value="">All Divisions</option></select></div>
+        <div><label>Sub Division</label><select id="fSub"><option value="">All Sub Divisions</option></select></div>
+        <div><label>Office Type</label><select id="fType"><option value="">All Office Types</option></select></div>
+        <div><label>SO Name</label><select id="fSO"><option value="">All SOs</option></select></div>
+      </div>
+      <div class="actions">
+        <button class="secondary" onclick="resetFilters()">Reset Filters</button>
+        <button class="primary" onclick="loadData()">↻ Refresh from Google Sheet</button>
+      </div>
+    </div>
+
+    <div class="kpi-grid" id="stats" aria-label="Village mapping KPIs"></div>
+
+    <div class="card">
+      <div class="dashboard-titlebar" style="margin-bottom:8px">
+        <div>
+          <h2 style="margin:0">Division wise Position</h2>
+          <div class="filter-note">Click the arrow in a row to expand the next level.</div>
+        </div>
+        <div class="report-actions">
+          <button class="excel-btn" onclick="exportPositionExcel()">▣ Excel</button>
+          <button class="pdf-btn" onclick="exportPositionPDF()">▤ PDF</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table class="hierarchy-table">
+          <thead><tr>
+            <th>Division / Sub Division / SO / Office Name</th>
+            <th>No of Dly Offices</th>
+            <th>Mapped</th>
+            <th>Pending for Mapping</th>
+            <th>% of Mapping</th>
+          </tr></thead>
+          <tbody id="dashboardBody"><tr><td colspan="5" class="loading">Loading…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div id="kpiModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="kpiModalTitle">
+  <div class="report-modal">
+    <div class="modal-head">
+      <div>
+        <h3 id="kpiModalTitle">KPI Details</h3>
+        <div class="modal-sub" id="kpiModalSub">Village Mapping • Delivery Post Office - Nagpur Region</div>
+      </div>
+      <button class="close-btn" onclick="closeKpiModal()" title="Close">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="report-actions" style="margin-bottom:10px">
+        <button class="excel-btn" onclick="exportKpiExcel()">▣ Download Excel</button>
+        <button class="pdf-btn" onclick="exportKpiPDF()">▤ Download PDF</button>
+      </div>
+      <div class="table-wrap">
+        <table class="modal-table">
+          <thead id="kpiModalHead"></thead>
+          <tbody id="kpiModalBody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <span id="kpiModalCount">0 records</span>
+      <span>Source: Google Sheet • Current dashboard filters applied</span>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+/* =========================================================
+   Standalone Village Mapping Dashboard
+   Works from a downloaded .html file.
+   Google Apps Script Web App is used as JSON API.
+   ========================================================= */
+
+const API_URL = 'https://script.google.com/macros/s/AKfycbwZwmSqwiCgz8D0Mf8eL-Cs-5OpMY6U3sphY67f2OUUZXZJCIG0Z6ZV1fA4nHfKZmcp/exec';
+const REFRESH_INTERVAL_MS = 30000;
+
+let DATA = {ok:false, offices:[], villages:[]};
+let selectedOffice = null;
+let dataLoading = false;
+let autoRefreshTimer = null;
+let mappingDirty = false;
+let lastSubmittedVillages = [];
+
+const $ = id => document.getElementById(id);
+
+function esc(s){
+  return String(s ?? '').replace(/[&<>"']/g,m=>({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[m]));
+}
+
+function unique(a){
+  return [...new Set(a.map(x=>String(x ?? '').trim()).filter(Boolean))]
+    .sort((a,b)=>a.localeCompare(b));
+}
+
+function toast(msg, ok=true){
+  const t=$('toast');
+  t.textContent=msg;
+  t.className='toast '+(ok?'ok':'err');
+  t.style.display='block';
+  clearTimeout(window.__toastTimer);
+  window.__toastTimer=setTimeout(()=>t.style.display='none',5000);
+}
+
+function setStatus(msg){
+  $('mappingStatus').textContent=msg;
+}
+
+function setAutoRefreshStatus(message){
+  let el=$('autoRefreshStatus');
+  if(!el){
+    el=document.createElement('div');
+    el.id='autoRefreshStatus';
+    el.style.cssText=
+      'position:fixed;right:14px;bottom:14px;z-index:9999;'+
+      'padding:7px 11px;border-radius:18px;background:#fff;'+
+      'border:1px solid #d8dee8;box-shadow:0 2px 8px rgba(0,0,0,.08);'+
+      'font:12px Arial,sans-serif;color:#52606d;';
+    document.body.appendChild(el);
+  }
+  el.textContent=message;
+}
+
+function showTab(id,btn){
+  document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+  $(id).classList.add('active');
+  btn.classList.add('active');
+  if(id==='dashboard') renderDashboard();
+}
+
+function fillSelect(sel, values, placeholder, disabled=false){
+  const current=sel.value;
+  const vals=unique(values);
+  sel.innerHTML='<option value="">'+esc(placeholder)+'</option>'+
+    vals.map(v=>'<option value="'+esc(v)+'">'+esc(v)+'</option>').join('');
+  sel.disabled=disabled;
+  if(vals.includes(current)) sel.value=current;
+}
+
+function getFilteredOffices(){
+  const d=$('division').value;
+  const s=$('subdivision').value;
+  const so=$('so').value;
+  return DATA.offices.filter(o =>
+    (!d || o.division===d) &&
+    (!s || o.subDivision===s) &&
+    (!so || o.soName===so)
+  );
+}
+
+function clearOfficeSelection(clearHierarchy=false){
+  selectedOffice=null;
+  $('officeId').value='';
+  $('officeSearch').value='';
+  // Office search is always available so the user can select an office directly
+  // without first selecting Division / Sub Division / SO.
+  $('officeSearch').disabled=false;
+  $('officeList').style.display='none';
+  if(clearHierarchy){
+    $('division').value='';
+    $('subdivision').innerHTML='<option value="">Select Sub Division</option>';
+    $('subdivision').disabled=true;
+    $('so').innerHTML='<option value="">Select SO Name</option>';
+    $('so').disabled=true;
+  }
+  if($('existingMappingBanner')){
+    $('existingMappingBanner').style.display='none';
+    $('existingMappingBanner').textContent='';
+  }
+  $('officeHint').textContent='Use Division → Sub Division → SO, or search Office Name directly.';
+}
+
+function selectOffice(office, syncHierarchy=true){
+  if(!office)return;
+  selectedOffice=office;
+  $('officeId').value=office.officeId || '';
+  $('officeSearch').value=office.officeName || '';
+  $('officeSearch').disabled=false;
+
+  // Direct office search also automatically selects its hierarchy.
+  if(syncHierarchy){
+    if(office.division && [...$('division').options].some(o=>o.value===office.division))
+      $('division').value=office.division;
+
+    fillSelect($('subdivision'),
+      DATA.offices.filter(o=>o.division===office.division).map(o=>o.subDivision),
+      'Select Sub Division', !office.division);
+    if(office.subDivision && [...$('subdivision').options].some(o=>o.value===office.subDivision))
+      $('subdivision').value=office.subDivision;
+
+    fillSelect($('so'),
+      DATA.offices.filter(o=>o.division===office.division && o.subDivision===office.subDivision).map(o=>o.soName),
+      'Select SO Name', !office.subDivision);
+    if(office.soName && [...$('so').options].some(o=>o.value===office.soName))
+      $('so').value=office.soName;
+  }
+
+  $('officeHint').textContent=
+    `${office.officeType || 'Delivery Office'} • Office ID ${office.officeId || '-'} • SOL ID ${office.solId || '-'} • PIN ${office.pincode || '-'}`;
+  $('officeList').style.display='none';
+  loadExistingOfficeMappings(office);
+  mappingDirty=true;
+}
+
+function refreshSubDivisionOptions(){
+  const d=$('division').value;
+  fillSelect($('subdivision'),
+    DATA.offices.filter(o=>o.division===d).map(o=>o.subDivision),
+    'Select Sub Division', !d);
+  $('so').innerHTML='<option value="">Select SO Name</option>';
+  $('so').disabled=true;
+  clearOfficeSelection(false);
+  renderOfficeList();
+}
+
+function refreshSOOptions(){
+  const d=$('division').value, s=$('subdivision').value;
+  fillSelect($('so'),
+    DATA.offices.filter(o=>o.division===d && o.subDivision===s).map(o=>o.soName),
+    'Select SO Name', !s);
+  clearOfficeSelection(false);
+  renderOfficeList();
+}
+
+function enableOfficeSearch(){
+  // Search is available even before hierarchy selection. If hierarchy is
+  // selected, the results are automatically limited to that hierarchy.
+  $('officeSearch').disabled=false;
+  $('officeHint').textContent='Type Office Name / Office ID / SOL ID / PIN, or use the dropdowns above.';
+  renderOfficeList();
+}
+
+function renderOfficeList(){
+  const input=$('officeSearch'), list=$('officeList');
+  if(input.disabled){ list.style.display='none'; return; }
+
+  const q=input.value.trim().toLowerCase();
+  const offices=getFilteredOffices().filter(o =>
+    !q ||
+    String(o.officeName).toLowerCase().includes(q) ||
+    String(o.officeId).toLowerCase().includes(q) ||
+    String(o.pincode).toLowerCase().includes(q) ||
+    String(o.solId).toLowerCase().includes(q)
+  ).slice(0,100);
+
+  list.innerHTML=offices.length ? offices.map(o=>`
+    <div class="search-item office-option" data-office-id="${esc(o.officeId)}">
+      <b>${esc(o.officeName)}</b>
+      <span style="color:#667085">
+        (${esc(o.officeType)} • SOL ${esc(o.solId)} • ${esc(o.pincode)})
+      </span>
+    </div>`).join('') :
+    '<div class="search-item">No delivery office found</div>';
+
+  list.style.display='block';
+
+  list.querySelectorAll('.office-option').forEach(el=>{
+    el.addEventListener('mousedown',e=>e.preventDefault());
+    el.addEventListener('click',()=>{
+      const office=DATA.offices.find(x=>String(x.officeId)===String(el.dataset.officeId));
+      if(!office)return;
+      selectOffice(office,true);
+    });
+  });
+}
+
+function loadExistingOfficeMappings(office){
+  const officeId=String(office?.officeId??'').trim();
+  const solId=String(office?.solId??'').trim();
+
+  // Prefer office-id because it is the primary mapping key. If older
+  // records lack office-id, use SOL ID as a safe fallback.
+  let existing=DATA.villages.filter(v =>
+    v.mapped &&
+    officeId &&
+    String(v.officeId??'').trim()===officeId
+  );
+
+  if(!existing.length && solId){
+    existing=DATA.villages.filter(v =>
+      v.mapped &&
+      String(v.solId??'').trim()===solId
+    );
+  }
+
+  // Remove duplicate village names while retaining the first complete record.
+  const seen=new Set();
+  existing=existing.filter(v=>{
+    const key=String(v.village??'').trim().toLowerCase();
+    if(!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  }).sort((a,b)=>String(a.village??'').localeCompare(String(b.village??'')));
+
+  const wrap=$('villageRows');
+  const banner=$('existingMappingBanner');
+  wrap.innerHTML='';
+
+  if(existing.length){
+    existing.forEach(v=>addVillageRow(v.village||'',true));
+
+    banner.style.display='flex';
+    banner.innerHTML=
+      `✓ Existing mapping loaded for <strong>${esc(office.officeName)}</strong>:
+       <strong>${existing.length.toLocaleString()}</strong> village(s).
+       Edit, remove or add villages below, then click Submit Mapping.`;
+
+    $('officeHint').textContent=
+      `${office.officeType} • Office ID ${office.officeId} • SOL ID ${office.solId} • PIN ${office.pincode} • ${existing.length.toLocaleString()} existing village mapping(s) loaded for modification`;
+  }else{
+    addVillageRow();
+
+    banner.style.display='flex';
+    banner.innerHTML=
+      `＋ No existing village mapping found for <strong>${esc(office.officeName)}</strong>.
+       Add village(s) below to create the mapping.`;
+
+    $('officeHint').textContent=
+      `${office.officeType} • Office ID ${office.officeId} • SOL ID ${office.solId} • PIN ${office.pincode} • No existing village mapping found`;
+  }
+}
+function addVillageRow(value='',existing=false){
+  const wrap=$('villageRows');
+  const row=document.createElement('div');
+  row.className='vrow'+(existing?' existing-village':'');
+  row.innerHTML=`
+    <div class="search-wrap">
+      <input type="text" class="villageInput" placeholder="Search village name..."
+             value="${esc(value)}" autocomplete="off">
+      <div class="search-list villageList"></div>
+    </div>
+    <button class="remove" type="button" title="Remove">×</button>`;
+  wrap.appendChild(row);
+
+  const input=row.querySelector('.villageInput');
+  const list=row.querySelector('.villageList');
+
+  input.addEventListener('input',()=>{ mappingDirty=true; renderVillageList(input,list); });
+  input.addEventListener('focus',()=>renderVillageList(input,list));
+
+  row.querySelector('.remove').addEventListener('click',()=>{
+    if(wrap.children.length>1) row.remove();
+    else input.value='';
+    mappingDirty=true;
+  });
+}
+
+function renderVillageList(input,list){
+  const q=input.value.trim().toLowerCase();
+  const villages=DATA.villages.filter(v=>
+    !q ||
+    String(v.village).toLowerCase().includes(q) ||
+    String(v.district).toLowerCase().includes(q) ||
+    String(v.subDistrict).toLowerCase().includes(q)
+  ).slice(0,100);
+
+  list.innerHTML=villages.length ? villages.map(v=>`
+    <div class="search-item village-option" data-village="${esc(v.village)}">
+      <b>${esc(v.village)}</b>
+      <span style="color:#667085">
+        ${esc(v.district)} • ${esc(v.subDistrict)}${v.mapped?' • mapped':''}
+      </span>
+    </div>`).join('') :
+    '<div class="search-item">No village found</div>';
+
+  list.style.display='block';
+
+  list.querySelectorAll('.village-option').forEach(el=>{
+    el.addEventListener('mousedown',e=>e.preventDefault());
+    el.addEventListener('click',()=>{
+      input.value=el.dataset.village;
+      list.style.display='none';
+      mappingDirty=true;
+    });
+  });
+}
+
+function renderVillageRows(reset=false){
+  if(reset || !$('villageRows').children.length){
+    $('villageRows').innerHTML='';
+    addVillageRow();
+  }
+}
+
+function villageNames(){
+  return [...document.querySelectorAll('.villageInput')]
+    .map(x=>x.value.trim()).filter(Boolean);
+}
+
+function renderMappingTable(names=[]){
+  const wanted=new Set(names);
+  let rows=DATA.villages.filter(v=>wanted.size ? wanted.has(v.village) : v.mapped);
+
+  // Default view after submission: show all mapped records.
+  if(!rows.length && DATA.villages.length)
+    rows=DATA.villages.filter(v=>v.mapped);
+
+  $('mappingCount').textContent=rows.length.toLocaleString()+' records';
+
+  $('mappingBody').innerHTML=rows.length ? rows.map(v=>`
+    <tr>
+      <td>${esc(v.officeId)}</td>
+      <td>${esc(v.officeName)}</td>
+      <td>${esc(v.officeType)}</td>
+      <td>${esc(v.pincode)}</td>
+      <td>${esc(v.solId)}</td>
+      <td>${esc(v.division)}</td>
+      <td>${esc(v.subDivision)}</td>
+      <td>${esc(v.soName)}</td>
+      <td>${esc(v.village)}</td>
+    </tr>`).join('') :
+    '<tr><td colspan="9" class="empty">No mapped village records found.</td></tr>';
+}
+
+function submitMappings(){
+  if(!selectedOffice){
+    toast('Please select a Delivery Office from the searchable list.',false);
+    return;
+  }
+
+  const names=villageNames();
+  if(!names.length){
+    toast('Please select or enter at least one village.',false);
+    return;
+  }
+
+  const dup=names.filter((v,i,a)=>a.indexOf(v)!==i);
+  if(dup.length){
+    toast('Duplicate village entered: '+unique(dup).join(', '),false);
+    return;
+  }
+
+  const btns=document.querySelectorAll('#mapping .actions button');
+  btns.forEach(b=>b.disabled=true);
+  setStatus('Submitting mapping to Google Sheet…');
+  setAutoRefreshStatus('Saving to Google Sheet…');
+
+  const payload={
+    officeId:selectedOffice.officeId,
+    items:names.map(v=>({village:v,officeId:selectedOffice.officeId})),
+    overwrite:$('overwrite').checked
+  };
+
+  const callback='mappingSaveCallback_'+Date.now();
+  const script=document.createElement('script');
+
+  window[callback]=function(res){
+    try{
+      btns.forEach(b=>b.disabled=false);
+
+      if(!res || !res.ok){
+        toast((res&&res.message)||'Google Sheet save failed.',false);
+        setStatus('Google Sheet save failed');
+        return;
       }
 
-      return (
-        <div className="relative">
-          {isSyncing && (
-            <div className="fixed top-4 right-4 z-50 bg-slate-900 text-white px-4 py-2 rounded-lg shadow-lg flex items-center gap-2 text-xs font-semibold animate-in fade-in zoom-in-95 duration-200">
-               <Loader2 className="w-4 h-4 animate-spin text-red-400" /> Syncing to Google Sheet...
-            </div>
-          )}
-          
-          <App 
-            data={data} 
-            updateItem={updateItem} 
-            deleteItem={deleteItem} 
-            insertItem={insertItem} 
-          />
-        </div>
-      );
+      let msg=res.message||'Mapping saved.';
+      if(res.duplicates?.length) msg+=' Existing mapping skipped: '+res.duplicates.join(', ')+'.';
+      if(res.notFound?.length) msg+=' Not found: '+res.notFound.join(', ')+'.';
+
+      toast(msg,!!res.changed?.length);
+      lastSubmittedVillages=names.slice();
+      mappingDirty=false;
+      setStatus('Mapping saved • '+new Date().toLocaleString('en-IN'));
+
+      // Reset entry controls for the next mapping.
+      $('villageRows').innerHTML='';
+      addVillageRow();
+      if($('existingMappingBanner')){
+        $('existingMappingBanner').style.display='none';
+        $('existingMappingBanner').textContent='';
+      }
+      $('overwrite').checked=false;
+
+      // Re-read the sheet and show all columns by default.
+      loadData(true);
+    }finally{
+      delete window[callback];
+      script.remove();
+    }
+  };
+
+  script.onerror=function(){
+    btns.forEach(b=>b.disabled=false);
+    delete window[callback];
+    script.remove();
+    toast('Unable to reach the Google Sheet Web App.',false);
+    setStatus('Google Sheet connection failed');
+  };
+
+  script.src=API_URL+
+    '?api=save'+
+    '&callback='+encodeURIComponent(callback)+
+    '&payload='+encodeURIComponent(JSON.stringify(payload));
+
+  document.body.appendChild(script);
+}
+
+function setupMappingControls(firstLoad=false){
+  const oldD=$('division').value, oldS=$('subdivision').value, oldSO=$('so').value;
+  const oldOfficeId=String(selectedOffice?.officeId || $('officeId').value || '');
+
+  fillSelect($('division'),DATA.offices.map(o=>o.division),'Select Division',false);
+
+  if(firstLoad){
+    $('division').addEventListener('change',refreshSubDivisionOptions);
+    $('subdivision').addEventListener('change',refreshSOOptions);
+    $('so').addEventListener('change',enableOfficeSearch);
+
+    $('officeSearch').addEventListener('input',()=>{
+      // Typing a new query clears only the selected office, not the hierarchy.
+      selectedOffice=null;
+      $('officeId').value='';
+      renderOfficeList();
+    });
+    $('officeSearch').addEventListener('focus',renderOfficeList);
+
+    document.addEventListener('click',e=>{
+      if(!e.target.closest('#officeSearch')&&!e.target.closest('#officeList')&&
+         !e.target.closest('.villageInput')&&!e.target.closest('.villageList'))
+        $('officeList').style.display='none';
+    });
+  }
+
+  if(oldD && [...$('division').options].some(o=>o.value===oldD)){
+    $('division').value=oldD;
+    fillSelect($('subdivision'),
+      DATA.offices.filter(o=>o.division===oldD).map(o=>o.subDivision),
+      'Select Sub Division',false);
+
+    if(oldS && [...$('subdivision').options].some(o=>o.value===oldS)){
+      $('subdivision').value=oldS;
+      fillSelect($('so'),
+        DATA.offices.filter(o=>o.division===oldD&&o.subDivision===oldS).map(o=>o.soName),
+        'Select SO Name',false);
+
+      if(oldSO && [...$('so').options].some(o=>o.value===oldSO)){
+        $('so').value=oldSO;
+        enableOfficeSearch();
+      }else clearOfficeSelection();
+    }else{
+      $('so').innerHTML='<option value="">Select SO Name</option>';
+      $('so').disabled=true;
+      clearOfficeSelection();
+    }
+  }else{
+    $('subdivision').innerHTML='<option value="">Select Sub Division</option>';
+    $('subdivision').disabled=true;
+    $('so').innerHTML='<option value="">Select SO Name</option>';
+    $('so').disabled=true;
+    clearOfficeSelection();
+  }
+
+  // Restore the previously selected office after Google Sheet refresh.
+  if(oldOfficeId){
+    const oldOffice=DATA.offices.find(o=>String(o.officeId)===oldOfficeId);
+    if(oldOffice) selectOffice(oldOffice,true);
+    else clearOfficeSelection(false);
+  }else{
+    $('officeSearch').disabled=false;
+    $('officeHint').textContent='Use Division → Sub Division → SO, or search Office Name directly.';
+  }
+  renderVillageRows(false);
+}
+
+
+function setupDashboardFilters(){
+  const old={d:$('fDivision').value,s:$('fSub').value,t:$('fType').value,so:$('fSO').value};
+  fillSelect($('fDivision'),DATA.offices.map(o=>o.division),'All Divisions');
+  fillSelect($('fType'),DATA.offices.map(o=>o.officeType),'All Office Types');
+  fillSelect($('fSub'),DATA.offices.map(o=>o.subDivision),'All Sub Divisions');
+  fillSelect($('fSO'),DATA.offices.map(o=>o.soName),'All SOs');
+
+  if([...$('fDivision').options].some(o=>o.value===old.d))$('fDivision').value=old.d;
+  if([...$('fSub').options].some(o=>o.value===old.s))$('fSub').value=old.s;
+  if([...$('fType').options].some(o=>o.value===old.t))$('fType').value=old.t;
+  if([...$('fSO').options].some(o=>o.value===old.so))$('fSO').value=old.so;
+
+  if(!window.__dashboardFilterHandlers){
+    ['fDivision','fSub','fType','fSO'].forEach(id=>$(id).addEventListener('change',renderDashboard));
+    window.__dashboardFilterHandlers=true;
+  }
+}
+
+function officesForFilters(){
+  return DATA.offices.filter(o=>
+    (!$('fDivision').value||o.division===$('fDivision').value)&&
+    (!$('fSub').value||o.subDivision===$('fSub').value)&&
+    (!$('fType').value||o.officeType===$('fType').value)&&
+    (!$('fSO').value||o.soName===$('fSO').value)
+  );
+}
+
+/* A delivery office is treated as mapped when at least one village record
+   points to that office. This keeps office KPIs independent of village count. */
+function buildOfficeStatus(offices){
+  const mappedIds=new Set(DATA.villages.filter(v=>v.mapped && v.officeId!=null)
+    .map(v=>String(v.officeId)));
+  return offices.map(o=>({
+    office:o,
+    mapped:mappedIds.has(String(o.officeId))
+  }));
+}
+
+function kpiCard(cls,icon,num,label,key){
+  return `<div class="kpi ${cls}" data-kpi="${esc(key)}" onclick="openKpiModal('${esc(key)}')">
+    <div class="icon">${icon}</div>
+    <div class="num">${Number.isFinite(Number(num))?Number(num).toLocaleString():esc(num)}</div>
+    <div class="label">${esc(label)}</div>
+    <div class="hint">Click to view details</div>
+  </div>`;
+}
+
+function renderDashboard(){
+  const offices=officesForFilters();
+  const statuses=buildOfficeStatus(offices);
+  const totalOffices=offices.length;
+  const mappedOffices=statuses.filter(x=>x.mapped).length;
+  const pendingOffices=totalOffices-mappedOffices;
+  const officePct=totalOffices?mappedOffices*100/totalOffices:0;
+
+  const allowed=new Set(offices.map(o=>String(o.officeId)));
+  const filtered=DATA.villages.filter(v=>allowed.has(String(v.officeId)));
+  // Total Villages is the full count returned from the Google Sheet
+  // "village" source dataset, independent of the selected office filters.
+  const totalVillages=Array.isArray(DATA.villages)?DATA.villages.length:0;
+  const mappedVillages=filtered.filter(v=>v.mapped).length;
+  const pendingVillages=Math.max(0,totalVillages-mappedVillages);
+  const villagePct=totalVillages?mappedVillages*100/totalVillages:0;
+
+  $('stats').innerHTML=[
+    kpiCard('office','▣',totalOffices,'Total Offices','total-offices'),
+    kpiCard('mapped','✓',mappedOffices,'Mapped Offices','mapped-offices'),
+    kpiCard('pending','!',pendingOffices,'Pending offices','pending-offices'),
+    kpiCard('percent','%',officePct.toFixed(2)+'%','% Mapped Offices','mapped-office-percent'),
+    kpiCard('village','🏘️',totalVillages,'Total Villages','total-villages'),
+    kpiCard('village-mapped','✓',mappedVillages,'Mapped Villages','mapped-villages'),
+    kpiCard('village-pending','!',pendingVillages,'Pending of Mapping','pending-villages'),
+    kpiCard('village-percent','%',villagePct.toFixed(2)+'%','% of Mapping','mapped-village-percent')
+  ].join('');
+
+  renderHierarchy(offices);
+}
+
+function officeGroupKey(parts){return parts.map(x=>String(x??'')).join('¦');}
+
+function buildHierarchy(offices){
+  const status=buildOfficeStatus(offices);
+  const root={level:-1,name:'Nagpur Region',children:[], offices:0,mapped:0};
+  const divMap=new Map();
+
+  status.forEach(({office,mapped})=>{
+    const d=office.division||'—', s=office.subDivision||'—', so=office.soName||'—';
+    let dn=divMap.get(d);
+    if(!dn){dn={level:0,name:d,key:'d|'+d,children:[],offices:0,mapped:0};divMap.set(d,dn);root.children.push(dn);}
+    dn.offices++; dn.mapped+=mapped?1:0;
+    let sn=dn.children.find(x=>x.name===s);
+    if(!sn){sn={level:1,name:s,key:'s|'+d+'|'+s,children:[],offices:0,mapped:0};dn.children.push(sn);}
+    sn.offices++; sn.mapped+=mapped?1:0;
+    let son=sn.children.find(x=>x.name===so);
+    if(!son){son={level:2,name:so,key:'so|'+d+'|'+s+'|'+so,children:[],offices:0,mapped:0};sn.children.push(son);}
+    son.offices++; son.mapped+=mapped?1:0;
+    son.children.push({level:3,name:office.officeName||'—',key:'o|'+String(office.officeId),children:[],offices:1,mapped:mapped?1:0,officeId:office.officeId,officeType:office.officeType});
+  });
+  const sorter=(a,b)=>a.name.localeCompare(b.name);
+  root.children.sort(sorter);
+  root.children.forEach(d=>{d.children.sort(sorter);d.children.forEach(s=>{s.children.sort(sorter);s.children.forEach(so=>so.children.sort(sorter));});});
+  return root;
+}
+
+function pctClass(p){return p>=100?'percent-good':p>0?'percent-mid':'percent-zero';}
+function hierarchyRow(node,parentKey){
+  const p=node.offices?node.mapped*100/node.offices:0;
+  const has=node.children&&node.children.length;
+  const expanded=window.__expandedHierarchy?.has(node.key);
+  const indent='l'+Math.min(node.level,3);
+  const label=node.level===3
+    ? `${esc(node.name)} <span class="count-badge">${esc(node.officeType||'Delivery Office')}</span>`
+    : `<span class="chevron">${has?(expanded?'−':'+'):''}</span> ${esc(node.name)} <span class="count-badge">${node.children.length.toLocaleString()} ${node.level===0?'Sub Div.':node.level===1?'SO':node.level===2?'Offices':''}</span>`;
+  return `<tr class="tree-row level-${node.level}" data-tree-key="${esc(node.key)}" data-parent-key="${esc(parentKey||'')}" data-level="${node.level}" onclick="toggleHierarchyRow(event,'${esc(node.key)}')">
+    <td class="tree-cell"><span class="tree-indent ${indent}">${node.level===3?'<span class="leaf">•</span>':label}</span>${node.level===3?label:''}</td>
+    <td class="num">${node.offices.toLocaleString()}</td>
+    <td class="num status-num status-mapped">${node.mapped.toLocaleString()}</td>
+    <td class="num status-num status-pending">${(node.offices-node.mapped).toLocaleString()}</td>
+    <td class="num ${pctClass(p)}">${p.toFixed(2)}%</td>
+  </tr>`;
+}
+
+function flattenVisibleHierarchy(root){
+  const out=[];
+  function walk(nodes,parentKey=''){
+    nodes.forEach(n=>{
+      out.push({node:n,parentKey});
+      if(window.__expandedHierarchy?.has(n.key)&&n.children?.length)walk(n.children,n.key);
+    });
+  }
+  walk(root.children);
+  return out;
+}
+
+function renderHierarchy(offices){
+  if(!window.__expandedHierarchy)window.__expandedHierarchy=new Set();
+  const root=buildHierarchy(offices);
+  const visible=flattenVisibleHierarchy(root);
+  $('dashboardBody').innerHTML=visible.length
+    ? visible.map(x=>hierarchyRow(x.node,x.parentKey)).join('')
+    : '<tr><td colspan="5" class="empty">No records for selected filters.</td></tr>';
+}
+
+function toggleHierarchyRow(ev,key){
+  ev.stopPropagation();
+  const rows=[...document.querySelectorAll('#dashboardBody tr')];
+  const target=rows.find(r=>r.dataset.treeKey===key);
+  if(!target)return;
+  const nodeLevel=Number(target.dataset.level);
+  if(nodeLevel>=3)return;
+  if(!window.__expandedHierarchy)window.__expandedHierarchy=new Set();
+  if(window.__expandedHierarchy.has(key)) {
+    // Collapse this branch and all descendants.
+    [...window.__expandedHierarchy].forEach(k=>{ if(k!==key && k.startsWith(key.split('|').slice(0,nodeLevel+1).join('|'))) window.__expandedHierarchy.delete(k); });
+    window.__expandedHierarchy.delete(key);
+  } else window.__expandedHierarchy.add(key);
+  renderHierarchy(officesForFilters());
+}
+
+/* ---------- KPI detail popup ---------- */
+let activeKpiKey='';
+let activeKpiRows=[];
+
+function openKpiModal(key){
+  activeKpiKey=key;
+  const offices=officesForFilters();
+  const statuses=buildOfficeStatus(offices);
+  const mappedIds=new Set(DATA.villages.filter(v=>v.mapped).map(v=>String(v.officeId)));
+  let rows=[];
+  let title='KPI Details';
+
+  if(key==='total-offices'||key==='mapped-offices'||key==='pending-offices'||key==='mapped-office-percent'){
+    title=({
+      'total-offices':'Total Offices',
+      'mapped-offices':'Mapped Offices',
+      'pending-offices':'Pending offices',
+      'mapped-office-percent':'Office Mapping Position'
+    })[key];
+    rows=statuses.filter(x=>key==='total-offices'||key==='mapped-office-percent'||(key==='mapped-offices'?x.mapped:!x.mapped))
+      .map(x=>({division:x.office.division,subDivision:x.office.subDivision,soName:x.office.soName,officeName:x.office.officeName||'—',status:x.mapped?'Mapped':'Pending for Mapping',officeId:x.office.officeId}));
+  }else{
+    title=({
+      'total-villages':'Total Villages',
+      'mapped-villages':'Mapped Villages',
+      'pending-villages':'Pending of Mapping',
+      'mapped-village-percent':'Village Mapping Position'
+    })[key];
+    const allowed=new Set(offices.map(o=>String(o.officeId)));
+    rows=DATA.villages.filter(v=>allowed.has(String(v.officeId)) &&
+      (key==='total-villages'||key==='mapped-village-percent'||(key==='mapped-villages'?v.mapped:!v.mapped)))
+      .map(v=>{
+        const o=offices.find(x=>String(x.officeId)===String(v.officeId))||{};
+        return {division:o.division||v.division||'—',subDivision:o.subDivision||v.subDivision||'—',soName:o.soName||v.soName||'—',officeName:o.officeName||'—',village:v.village||'—',status:v.mapped?'Mapped':'Pending for Mapping',officeId:v.officeId};
+      });
+  }
+  rows.sort((a,b)=>String(a.division).localeCompare(String(b.division))||String(a.subDivision).localeCompare(String(b.subDivision))||String(a.soName).localeCompare(String(b.soName))||String(a.officeName).localeCompare(String(b.officeName))||String(a.village||'').localeCompare(String(b.village||'')));
+  activeKpiRows=rows;
+  $('kpiModalTitle').textContent=title;
+  $('kpiModalSub').textContent='Village Mapping • Delivery Post Office - Nagpur Region • Current filters applied';
+  const isVillage=key.includes('village');
+  $('kpiModalHead').innerHTML=isVillage
+    ? '<tr><th>Division</th><th>Sub Division</th><th>SO Name</th><th>Office Name</th><th>Village Name</th><th>Status</th><th>Office ID</th></tr>'
+    : '<tr><th>Division</th><th>Sub Division</th><th>SO Name</th><th>Office Name</th><th>Status</th><th>Office ID</th></tr>';
+  $('kpiModalBody').innerHTML=rows.length?rows.map(r=>isVillage
+    ? `<tr><td>${esc(r.division)}</td><td>${esc(r.subDivision)}</td><td>${esc(r.soName)}</td><td>${esc(r.officeName)}</td><td>${esc(r.village)}</td><td><span class="pill ${r.status==='Mapped'?'mapped':'unmapped'}">${r.status}</span></td><td>${esc(r.officeId)}</td></tr>`
+    : `<tr><td>${esc(r.division)}</td><td>${esc(r.subDivision)}</td><td>${esc(r.soName)}</td><td>${esc(r.officeName)}</td><td><span class="pill ${r.status==='Mapped'?'mapped':'unmapped'}">${r.status}</span></td><td>${esc(r.officeId)}</td></tr>`
+  ).join(''):'<tr><td colspan="'+(isVillage?7:6)+'" class="empty-report">No records for the selected KPI and filters.</td></tr>';
+  $('kpiModalCount').textContent=rows.length.toLocaleString()+' record'+(rows.length===1?'':'s');
+  $('kpiModal').classList.add('open');
+}
+
+function closeKpiModal(){ $('kpiModal').classList.remove('open'); }
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeKpiModal();});
+document.addEventListener('click',e=>{if(e.target.id==='kpiModal')closeKpiModal();});
+
+function csvCell(v){return '"'+String(v??'').replace(/"/g,'""')+'"';}
+function downloadBlob(content,name,type){
+  const blob=new Blob([content],{type});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();
+  setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},1000);
+}
+
+function exportKpiExcel(){
+  const isVillage=activeKpiKey.includes('village');
+  const head=isVillage?['Division','Sub Division','SO Name','Office Name','Village Name','Status','Office ID']:['Division','Sub Division','SO Name','Office Name','Status','Office ID'];
+  const rows=activeKpiRows.map(r=>isVillage?[r.division,r.subDivision,r.soName,r.officeName,r.village,r.status,r.officeId]:[r.division,r.subDivision,r.soName,r.officeName,r.status,r.officeId]);
+  const table='<table border="1"><tr>'+head.map(x=>`<th>${esc(x)}</th>`).join('')+'</tr>'+rows.map(r=>'<tr>'+r.map(x=>`<td>${esc(x)}</td>`).join('')+'</tr>').join('')+'</table>';
+  const doc='<html><head><meta charset="UTF-8"></head><body><h2>Village Mapping • Delivery Post Office - Nagpur Region</h2><h3>'+esc($('kpiModalTitle').textContent)+'</h3>'+table+'</body></html>';
+  downloadBlob(doc,'Village_Mapping_KPI_'+activeKpiKey+'.xls','application/vnd.ms-excel;charset=utf-8');
+}
+
+function exportKpiPDF(){
+  printReport($('kpiModalTitle').textContent, $('kpiModalHead').outerHTML, $('kpiModalBody').innerHTML);
+}
+
+function positionRowsForExport(){
+  const root=buildHierarchy(officesForFilters());
+  const out=[];
+  function walk(nodes,level=0){
+    nodes.forEach(n=>{
+      const p=n.offices?n.mapped*100/n.offices:0;
+      out.push({level,name:n.name,offices:n.offices,mapped:n.mapped,pending:n.offices-n.mapped,pct:p});
+      if(n.children?.length)walk(n.children,level+1);
+    });
+  }
+  walk(root.children);
+  return out;
+}
+
+function exportPositionExcel(){
+  const rows=positionRowsForExport();
+  const head=['Division / Sub Division / SO / Office Name','No of Dly Offices','Mapped','Pending for Mapping','% of Mapping'];
+  const table='<table border="1"><tr>'+head.map(x=>`<th>${x}</th>`).join('')+'</tr>'+
+    rows.map(r=>`<tr><td>${'&nbsp;'.repeat(r.level*4)}${esc(r.name)}</td><td>${r.offices}</td><td>${r.mapped}</td><td>${r.pending}</td><td>${r.pct.toFixed(2)}%</td></tr>`).join('')+'</table>';
+  const doc='<html><head><meta charset="UTF-8"></head><body><h2>Village Mapping • Delivery Post Office - Nagpur Region</h2><h3>Division wise Position</h3>'+table+'</body></html>';
+  downloadBlob(doc,'Village_Mapping_Division_Wise_Position.xls','application/vnd.ms-excel;charset=utf-8');
+}
+
+function exportPositionPDF(){
+  const head='<tr><th>Division / Sub Division / SO / Office Name</th><th>No of Dly Offices</th><th>Mapped</th><th>Pending for Mapping</th><th>% of Mapping</th></tr>';
+  const rows=positionRowsForExport().map(r=>`<tr><td>${'&nbsp;'.repeat(r.level*4)}${esc(r.name)}</td><td>${r.offices}</td><td>${r.mapped}</td><td>${r.pending}</td><td>${r.pct.toFixed(2)}%</td></tr>`).join('');
+  printReport('Division wise Position',head,rows);
+}
+
+function printReport(title,head,body){
+  const w=window.open('','_blank','width=1200,height=800');
+  if(!w)return;
+  w.document.write(`<!doctype html><html><head><meta charset="UTF-8"><title>${esc(title)}</title>
+  <style>@page{size:A4 landscape;margin:10mm}body{font-family:Arial,sans-serif;color:#1d2939}h1{font-size:18px;color:#12385b;margin:0 0 4px}h2{font-size:14px;margin:0 0 12px;color:#475467}table{width:100%;border-collapse:collapse;font-size:9px}th,td{border:1px solid #bfc9d4;padding:5px 6px;text-align:left}th{background:#edf4fb;color:#12385b}td:nth-child(n+2){text-align:right}.meta{font-size:9px;color:#667085;margin-bottom:10px}</style>
+  </head><body><h1>Village Mapping • Delivery Post Office - Nagpur Region</h1><h2>${esc(title)}</h2><div class="meta">Generated: ${new Date().toLocaleString('en-IN')}</div><table><thead>${head}</thead><tbody>${body}</tbody></table>
+  <script>window.onload=function(){setTimeout(function(){window.print()},300)}<\/script></body></html>`);
+  w.document.close();
+}
+
+function resetFilters(){
+  ['fDivision','fSub','fType','fSO'].forEach(id=>$(id).value='');
+  window.__expandedHierarchy=new Set();
+  renderDashboard();
+}
+
+/* ---------- Standalone JSONP API ---------- */
+
+function jsonp(url, timeoutMs=30000){
+  return new Promise((resolve,reject)=>{
+    const callback='jsonp_'+Date.now()+'_'+Math.random().toString(36).slice(2);
+    const script=document.createElement('script');
+    let timer=setTimeout(()=>{
+      cleanup();
+      reject(new Error('Google Sheet request timed out.'));
+    },timeoutMs);
+
+    function cleanup(){
+      clearTimeout(timer);
+      delete window[callback];
+      script.remove();
     }
 
-    const root = createRoot(document.getElementById('root'));
-    root.render(<DashboardWrapper />);
-  </script>
+    window[callback]=(data)=>{ cleanup(); resolve(data); };
+    script.onerror=()=>{ cleanup(); reject(new Error('Google Sheet Web App could not be reached.')); };
+    script.src=url+(url.includes('?')?'&':'?')+'callback='+encodeURIComponent(callback);
+    document.body.appendChild(script);
+  });
+}
+
+async function loadData(afterSave=false){
+  if(dataLoading)return;
+  dataLoading=true;
+
+  if(!afterSave)setStatus('Loading Google Sheet data…');
+  setAutoRefreshStatus('Refreshing from Google Sheet…');
+
+  try{
+    const res=await jsonp(API_URL+'?api=data');
+
+    if(!res||!res.ok)throw new Error(res?.message||'No usable data returned.');
+
+    const firstLoad=!DATA.ok;
+    DATA=res;
+
+    setupMappingControls(firstLoad);
+    setupDashboardFilters();
+    renderDashboard();
+
+    if(!mappingDirty){
+      renderMappingTable();
+    }
+
+    setStatus(
+      `Google Sheet live • ${res.deliveryCount.toLocaleString()} offices • `+
+      `${res.villageCount.toLocaleString()} villages • `+
+      `${new Date(res.updatedAt).toLocaleString('en-IN')}`
+    );
+    setAutoRefreshStatus(
+      'Google Sheet synced • '+new Date().toLocaleTimeString('en-IN',
+      {hour:'2-digit',minute:'2-digit',second:'2-digit'})
+    );
+
+    if(afterSave){
+      lastSubmittedVillages=[];
+      renderMappingTable();
+    }
+  }catch(err){
+    setStatus('Google Sheet sync failed • existing data retained');
+    setAutoRefreshStatus('Refresh failed • previous data retained');
+    toast(err.message||String(err),false);
+  }finally{
+    dataLoading=false;
+  }
+}
+
+function startAutoRefresh(){
+  clearInterval(autoRefreshTimer);
+  autoRefreshTimer=setInterval(()=>{
+    if(document.hidden)return;
+    if(mappingDirty){
+      setAutoRefreshStatus('Auto-refresh postponed • mapping form active');
+      return;
+    }
+    loadData(false);
+  },REFRESH_INTERVAL_MS);
+  setAutoRefreshStatus('Auto-refresh • every 30 seconds');
+}
+
+document.addEventListener('visibilitychange',()=>{
+  if(!document.hidden&&!mappingDirty)loadData(false);
+});
+
+window.addEventListener('load',()=>{
+  renderVillageRows(true);
+  loadData(false);
+  startAutoRefresh();
+});
+
+window.refreshVillageMappingDashboard=()=>loadData(false);
+</script>
+
 </body>
 </html>
